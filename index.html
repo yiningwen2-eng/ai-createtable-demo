@@ -1,0 +1,4831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WPS表格AI建表 - 交互Demo（实验版）</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; background: #f0f0f0; overflow: hidden; height: 100vh; }
+
+/* ============ 新建页 ============ */
+#newPage {
+  width: 100%; height: 100vh; background: #fff; display: flex; flex-direction: column;
+}
+.np-topbar {
+  height: 48px; background: #fff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; padding: 0 16px;
+}
+.np-topbar .logo { font-size: 14px; font-weight: 600; color: #333; }
+.np-topbar .search-bar {
+  margin-left: 24px; flex: 1; max-width: 480px; height: 32px; background: #f5f5f5; border-radius: 16px;
+  display: flex; align-items: center; padding: 0 14px; color: #999; font-size: 13px;
+}
+.np-topbar .right-icons { margin-left: auto; display: flex; gap: 16px; align-items: center; }
+.np-topbar .right-icons span { width: 28px; height: 28px; background: #f0f0f0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #666; }
+
+.np-body { display: flex; flex: 1; overflow: hidden; }
+.np-sidebar {
+  width: 200px; min-width: 200px; flex-shrink: 0; background: #f7f8fa; border-right: 1px solid #e8e8e8;
+  padding: 16px 16px 0; box-sizing: border-box;
+}
+.np-sidebar .btn-new,
+.np-sidebar .btn-open {
+  width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;
+  gap: 6px; white-space: nowrap; overflow: visible;
+}
+.np-sidebar .btn-new {
+  margin: 0 0 8px; padding: 10px 12px; background: #4d8cf5; color: #fff; border: none; border-radius: 6px;
+  font-size: 14px; cursor: pointer;
+}
+.np-sidebar .btn-open {
+  margin: 0 0 16px; padding: 9px 12px; background: #fff; color: #333; border: 1px solid #d9d9d9; border-radius: 6px;
+  font-size: 13px; cursor: pointer;
+}
+.np-sidebar .nav-item {
+  padding: 8px 24px; font-size: 13px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.np-sidebar .nav-item:hover { background: #eef1f6; }
+.np-sidebar .nav-item.active { color: #4d8cf5; background: #e8f0fe; }
+.np-sidebar .nav-section { padding: 16px 24px 6px; font-size: 12px; color: #999; }
+
+.np-main { flex: 1; padding: 32px 40px; overflow-y: auto; background: #fff; }
+.np-main .section-title { font-size: 15px; color: #333; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.np-main .section-title .refresh { font-size: 12px; color: #999; cursor: pointer; }
+
+.np-cards { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 32px; }
+.np-card {
+  width: 160px; height: 120px; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;
+  transition: all 0.2s; gap: 12px;
+}
+.np-card:hover { border-color: #4d8cf5; box-shadow: 0 2px 12px rgba(77,140,245,0.15); transform: translateY(-2px); }
+.np-card .card-icon { font-size: 32px; }
+.np-card .card-text { font-size: 13px; color: #333; }
+.np-card.blank-card .card-icon { color: #0faa51; font-size: 36px; font-weight: 300; }
+.np-card.ai-card {
+  width: 172px;
+  border: 1px solid transparent;
+  background: linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, #f0b4cc 0%, #b8c8f5 45%, #8eb5f7 100%) border-box;
+  justify-content: center;
+  gap: 10px;
+}
+.np-card.ai-card .card-icon {
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.np-card.ai-card .card-icon svg { width: 32px; height: 32px; display: block; }
+.np-card.ai-card .card-text-wrap {
+  background: #fff; padding: 8px 12px; border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(100, 120, 200, 0.14);
+  display: flex; align-items: center; justify-content: center;
+}
+.np-card.ai-card .card-text {
+  font-size: 11px; font-weight: 500; line-height: 1.35; text-align: center; white-space: nowrap;
+  background: linear-gradient(90deg, #9b5cf5 0%, #6b8ef5 55%, #5b8def 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+.np-right {
+  width: 260px; background: #f7f8fa; border-left: 1px solid #e8e8e8; padding: 20px;
+}
+.np-right .promo { font-size: 13px; color: #666; margin-bottom: 12px; }
+.np-right .promo-btn { color: #4d8cf5; font-size: 12px; cursor: pointer; background: #e8f0fe; padding: 4px 12px; border-radius: 4px; border: none; }
+.np-right .func-title { font-size: 13px; color: #333; font-weight: 600; margin: 20px 0 10px; }
+.np-right .func-item { padding: 8px 0; font-size: 12px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+/* ============ 表格页 ============ */
+#spreadsheetPage {
+  width: 100%; height: 100vh; display: none; flex-direction: column; background: #fff;
+}
+.sp-titlebar {
+  height: 32px; background: #fff; display: flex; align-items: center; padding: 0 8px; font-size: 12px; color: #666; border-bottom: 1px solid #e8e8e8;
+}
+.sp-titlebar .menu-items { display: flex; gap: 2px; }
+.sp-titlebar .menu-item { padding: 4px 10px; cursor: pointer; border-radius: 3px; font-size: 12px; color: #444; }
+.sp-titlebar .menu-item:hover { background: #f0f0f0; }
+.sp-titlebar .menu-item.active { color: #c00; }
+.sp-titlebar .save-status { margin-left: 8px; color: #999; font-size: 11px; }
+.sp-titlebar .right-area { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.sp-titlebar .wps-sidebar-btn {
+  background: none; border: none; cursor: pointer; font-size: 12px; color: #7b5ea7;
+  display: flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 4px;
+}
+.sp-titlebar .wps-sidebar-btn:hover { background: #f3f0f8; }
+.sp-titlebar .guide-bar-slot { flex: 0 1 auto; min-width: 0; margin-left: 6px; display: flex; align-items: center; }
+
+.sp-ribbon {
+  height: 80px; background: #fff; border-bottom: 1px solid #d9d9d9; padding: 4px 8px; display: flex; flex-direction: column;
+}
+.sp-ribbon .ribbon-tabs {
+  display: flex; gap: 0; margin-bottom: 4px;
+}
+.sp-ribbon .ribbon-tab {
+  padding: 3px 14px; font-size: 12px; color: #555; cursor: pointer; border-bottom: 2px solid transparent;
+}
+.sp-ribbon .ribbon-tab.active { color: #c00; border-bottom-color: #c00; }
+.sp-ribbon .ribbon-tools {
+  display: flex; gap: 6px; align-items: center; flex: 1; overflow: hidden;
+}
+.sp-ribbon .tool-group {
+  display: flex; gap: 4px; align-items: center; padding: 0 8px; border-right: 1px solid #e8e8e8;
+}
+.sp-ribbon .tool-btn {
+  width: 26px; height: 26px; background: #f5f5f5; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; color: #555;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sp-ribbon .tool-btn.label-btn {
+  width: auto; min-width: 28px; padding: 0 6px; white-space: nowrap;
+}
+.sp-ribbon .tool-btn.quick-build-btn {
+  padding: 0 10px; color: #5c4d7a; font-weight: 500; gap: 4px;
+}
+.sp-ribbon .tool-btn.quick-build-btn:hover { background: #ede8f5; }
+.sp-ribbon .tool-btn:hover { background: #e8e8e8; }
+.sp-ribbon .font-select {
+  height: 24px; border: 1px solid #d9d9d9; border-radius: 3px; font-size: 11px; padding: 0 4px; width: 80px;
+}
+.sp-ribbon .size-select {
+  height: 24px; border: 1px solid #d9d9d9; border-radius: 3px; font-size: 11px; padding: 0 4px; width: 42px;
+}
+
+.sp-formula-bar {
+  height: 26px; background: #fff; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; font-size: 12px;
+}
+.sp-formula-bar .cell-ref {
+  width: 72px; height: 100%; border-right: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; color: #333; font-size: 12px;
+}
+.sp-formula-bar .fx-icon { padding: 0 8px; color: #999; font-size: 12px; cursor: pointer; }
+.sp-formula-bar .formula-input { flex: 1; height: 100%; border: none; outline: none; font-size: 12px; padding: 0 4px; }
+
+.sp-content { flex: 1; display: flex; overflow: hidden; position: relative; }
+.sp-grid-area { flex: 1; overflow: auto; position: relative; }
+
+/* 表格网格 */
+.grid-table { border-collapse: collapse; width: max-content; min-width: 100%; }
+.grid-table .col-header {
+  background: #f8f9fa; border: 1px solid #e0e0e0; text-align: center; font-size: 11px; color: #666;
+  height: 22px; min-width: 80px; font-weight: normal; position: sticky; top: 0; z-index: 2;
+}
+.grid-table .col-header.first { min-width: 40px; width: 40px; }
+.grid-table .row-header {
+  background: #f8f9fa; border: 1px solid #e0e0e0; text-align: center; font-size: 11px; color: #666;
+  width: 40px; min-width: 40px; font-weight: normal;
+}
+.grid-table td {
+  border: 1px solid #e0e0e0; height: 22px; min-width: 80px; font-size: 12px; padding: 0 4px; color: #333; position: relative;
+}
+.grid-table td.active-cell { border: 2px solid #2b7d2b; }
+.grid-table .generated-header {
+  background: #f0f7ff; font-weight: 600; color: #333; text-align: center; font-size: 12px;
+}
+.grid-table .generated-data { font-size: 12px; }
+.grid-table .progress-bar {
+  background: #e8f5e9; height: 16px; border-radius: 2px; position: relative; overflow: hidden;
+}
+.grid-table .progress-bar .fill { height: 100%; background: #4caf50; border-radius: 2px; }
+.grid-table .filter-icon { font-size: 10px; color: #999; margin-left: 4px; }
+
+/* 底部Sheet标签栏 */
+.sp-sheet-bar {
+  height: 28px; background: #f5f5f5; border-top: 1px solid #d9d9d9; display: flex; align-items: center; padding: 0 8px; font-size: 12px;
+}
+.sp-sheet-bar .sheet-nav { display: flex; gap: 2px; margin-right: 8px; }
+.sp-sheet-bar .sheet-nav button { background: none; border: none; cursor: pointer; font-size: 11px; color: #999; padding: 2px 4px; }
+.sp-sheet-bar .sheet-tabs {
+  display: flex; align-items: flex-end; gap: 2px; flex-wrap: nowrap;
+  max-width: min(36vw, 320px); overflow-x: auto;
+}
+.sp-sheet-bar .sheet-tab {
+  padding: 3px 16px; background: #fff; border: 1px solid #d9d9d9; border-bottom: none; font-size: 12px; color: #333;
+  cursor: pointer; border-radius: 3px 3px 0 0; margin-top: 2px; flex-shrink: 0; user-select: none;
+}
+.sp-sheet-bar .sheet-tab:not(.active) {
+  background: #e8e8e8; border-bottom: 1px solid #d9d9d9; margin-top: 3px; font-weight: 400;
+}
+.sp-sheet-bar .sheet-tab.active { background: #fff; font-weight: 500; }
+.sp-sheet-bar .sheet-tab:hover { color: #4d8cf5; }
+.sp-sheet-bar .add-sheet { background: none; border: none; cursor: pointer; font-size: 14px; color: #999; margin-left: 4px; }
+.sp-sheet-bar .bar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; font-size: 11px; color: #999; }
+
+/* ============ 底部AI面板（位于表格画布底部居中） ============ */
+.ai-panel {
+  position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%);
+  width: 72%; max-width: 780px; min-width: 520px;
+  background: rgba(255,255,255,0.38); backdrop-filter: blur(16px) saturate(1.15); -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 16px; padding: 10px 14px 12px;
+  z-index: 100; transition: all 0.3s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+.ai-panel.hidden { display: none; }
+
+/* 示例按钮行 */
+.ai-panel .examples-row {
+  display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: nowrap; justify-content: flex-start;
+  padding: 0 6px;
+}
+.ai-panel .example-btn {
+  padding: 7px 16px; background: rgba(255,255,255,0.48); border: 1px solid rgba(0,0,0,0.08); border-radius: 20px;
+  font-size: 13px; color: #444; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  display: flex; align-items: center; gap: 5px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.ai-panel .example-btn:hover { border-color: rgba(0,0,0,0.14); color: #222; background: rgba(255,255,255,0.65); box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.ai-panel .example-btn .icon {
+  width: 20px; height: 20px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ai-panel .example-btn .icon.purple { background: rgba(155,126,216,0.14); color: #9b7ed8; }
+.ai-panel .example-btn .icon.blue { background: rgba(77,140,245,0.14); color: #4d8cf5; }
+.ai-panel .example-btn .icon.orange { background: rgba(245,166,35,0.14); color: #e8952a; }
+.ai-panel .example-btn .icon svg {
+  width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.ai-panel .more-btn {
+  padding: 7px 14px; background: rgba(255,255,255,0.48); border: 1px solid rgba(0,0,0,0.08); border-radius: 20px;
+  font-size: 13px; color: #999; cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.ai-panel .more-btn:hover { border-color: rgba(0,0,0,0.14); color: #666; background: rgba(255,255,255,0.65); }
+.ai-panel .panel-close-btn {
+  width: 28px; height: 28px; padding: 0; margin-left: auto; flex-shrink: 0;
+  background: transparent; border: none; border-radius: 6px; cursor: pointer;
+  color: #bbb; display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+.ai-panel .panel-close-btn:hover { color: #666; background: rgba(0, 0, 0, 0.06); }
+.ai-panel .panel-close-btn:active { background: rgba(0, 0, 0, 0.1); }
+.ai-panel .panel-close-btn svg {
+  width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+/* 输入区：上方全文 + 底栏工具（对齐图2） */
+.ai-panel .input-row {
+  background: rgba(255,255,255,0.52); border: 1px solid rgba(0,0,0,0.1); border-radius: 24px;
+  transition: border-color 0.2s, background 0.2s;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.ai-panel .input-row:focus-within { border-color: rgba(0,0,0,0.16); background: rgba(255,255,255,0.62); box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+.ai-panel .input-box { padding: 14px 16px 12px; }
+.ai-panel .input-text-area { margin-bottom: 8px; }
+/* 附件芯片：行内嵌在输入框内，可在卡片后继续输入 */
+.ai-panel .main-input .attach-chip {
+  display: inline-flex; align-items: center; gap: 6px; vertical-align: middle;
+  max-width: 220px; padding: 4px 22px 4px 6px; margin: 0 6px 2px 0;
+  border: 1px solid #e8e8e8; border-radius: 8px; background: #fff;
+  position: relative; white-space: nowrap; user-select: none; cursor: default;
+  line-height: 1.3; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ai-panel .main-input .attach-chip:hover {
+  border-color: #d0d0d0; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.ai-panel .main-input .attach-chip .attach-icon {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.ai-panel .main-input .attach-chip .attach-icon svg { width: 16px; height: 16px; }
+.ai-panel .main-input .attach-chip .attach-icon img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.ai-panel .main-input .attach-chip--image .attach-icon { background: #e8f0fe; color: #4d8cf5; }
+.ai-panel .main-input .attach-chip--pdf .attach-icon { background: #fdecea; color: #e53935; }
+.ai-panel .main-input .attach-chip--word .attach-icon { background: #e8f0fe; color: #2b579a; }
+.ai-panel .main-input .attach-chip--excel .attach-icon { background: #e8f5e9; color: #217346; }
+.ai-panel .main-input .attach-chip--ppt .attach-icon { background: #fff3e0; color: #d24726; }
+.ai-panel .main-input .attach-chip--file .attach-icon { background: #f5f5f5; color: #888; }
+.ai-panel .main-input .attach-chip .attach-name {
+  font-size: 13px; color: #333; overflow: hidden; text-overflow: ellipsis;
+  max-width: 140px;
+}
+.ai-panel .main-input .attach-chip .attach-remove {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; padding: 0; border: none; border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06); color: #888; font-size: 12px; line-height: 1;
+  cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.ai-panel .main-input .attach-chip:hover .attach-remove { opacity: 1; }
+.ai-panel .main-input .attach-chip .attach-remove:hover { background: rgba(0, 0, 0, 0.12); color: #333; }
+.ai-panel .main-input.prompt-editor {
+  display: block; width: 100%; border: none; outline: none; font-size: 13px; color: #333; background: transparent;
+  padding: 0; line-height: 1.5; overflow-y: hidden; box-sizing: border-box;
+  min-height: 22px; max-height: 96px; font-family: inherit; word-break: break-word; white-space: pre-wrap;
+}
+.ai-panel .main-input.prompt-editor.show-placeholder::before {
+  content: attr(data-placeholder); color: #c0c0c0; pointer-events: none;
+}
+.ai-panel .main-input .skill-chip {
+  display: inline-flex; align-items: center; gap: 2px; vertical-align: baseline;
+  background: #f0edfa; color: #7b5ea7; font-size: 13px; line-height: 1.5;
+  padding: 1px 6px 1px 8px; border-radius: 6px; border: 1px solid rgba(123, 94, 167, 0.2);
+  margin: 0 4px 0 0; white-space: nowrap; user-select: none; cursor: default;
+}
+.ai-panel .main-input .skill-chip .skill-chip-remove {
+  cursor: pointer; font-size: 11px; color: #a78bca; padding: 0 2px; line-height: 1;
+}
+.ai-panel .main-input .skill-chip .skill-chip-remove:hover { color: #7b5ea7; }
+.ai-panel .main-input .field-chip,
+.ai-sidebar .sb-input .field-chip {
+  display: inline;
+  background: #f3f4f6;
+  padding: 0 4px; border-radius: 4px;
+  margin: 0;
+  font: inherit; letter-spacing: inherit;
+  cursor: text; white-space: nowrap;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  outline: 1px solid transparent;
+  outline-offset: -1px;
+  transition: background 0.15s, outline-color 0.15s;
+}
+.ai-panel .main-input .field-chip .field-chip-inner,
+.ai-sidebar .sb-input .field-chip .field-chip-inner {
+  display: inline;
+  outline: none;
+  color: #333;
+  font: inherit; letter-spacing: inherit;
+  cursor: text;
+  min-width: 1px;
+}
+.ai-panel .main-input .field-chip .field-chip-ghost,
+.ai-sidebar .sb-input .field-chip .field-chip-ghost {
+  display: none;
+  color: #9ca3af;
+  pointer-events: none;
+  user-select: none;
+}
+.ai-panel .main-input .field-chip.is-placeholder:not(.is-focused) .field-chip-inner,
+.ai-sidebar .sb-input .field-chip.is-placeholder:not(.is-focused) .field-chip-inner {
+  color: #9ca3af;
+}
+.ai-panel .main-input .field-chip.is-focused.is-placeholder:not(.is-filled) .field-chip-ghost,
+.ai-sidebar .sb-input .field-chip.is-focused.is-placeholder:not(.is-filled) .field-chip-ghost {
+  display: inline;
+}
+.ai-panel .main-input .field-chip.is-filled .field-chip-ghost,
+.ai-sidebar .sb-input .field-chip.is-filled .field-chip-ghost {
+  display: none !important;
+}
+.ai-panel .main-input .field-chip.is-focused,
+.ai-sidebar .sb-input .field-chip.is-focused {
+  background: #fff;
+  outline-color: #4d8cf5;
+}
+.ai-panel .input-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ai-panel .input-toolbar-left { display: flex; align-items: center; gap: 2px; }
+.ai-panel .input-toolbar-right { display: flex; align-items: center; gap: 6px; }
+.ai-panel .func-btn {
+  width: 28px; height: 28px; background: transparent; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: #999;
+  flex-shrink: 0; transition: color 0.2s;
+}
+.ai-panel .func-btn:hover { color: #555; background: rgba(0,0,0,0.05); }
+
+.ai-panel .model-btn {
+  height: 28px; border: none; background: transparent; font-size: 12px; color: #999;
+  padding: 0 6px; cursor: pointer; flex-shrink: 0; outline: none; display: flex; align-items: center; gap: 2px;
+  white-space: nowrap; border-radius: 6px;
+}
+.ai-panel .model-btn:hover { color: #666; background: rgba(0,0,0,0.05); }
+.ai-panel .model-btn .arrow { font-size: 10px; transition: transform 0.2s; }
+.ai-panel .model-btn .arrow.up { transform: rotate(180deg); }
+
+.ai-panel .send-btn {
+  width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  font-size: 15px;
+}
+.ai-panel .send-btn.disabled { background: #efefef; color: #d0d0d0; cursor: not-allowed; }
+.ai-panel .send-btn.active { background: #222; color: #fff; cursor: pointer; }
+.ai-panel .send-btn.active:hover { background: #000; }
+
+/* 更多示例弹窗 */
+.more-popup {
+  position: absolute; bottom: calc(100% + 6px); left: 0;
+  background: #fff; border: 1px solid #e8e8e8; border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10); padding: 12px; display: none;
+  z-index: 110; width: 240px;
+}
+.more-popup.show { display: block; }
+.more-popup .popup-examples { display: flex; flex-direction: column; gap: 5px; }
+.more-popup .popup-example-btn {
+  padding: 8px 12px; background: #fff; border: 1px solid #eee; border-radius: 10px;
+  font-size: 13px; color: #555; cursor: pointer; text-align: left; transition: all 0.2s;
+  white-space: nowrap;
+}
+.more-popup .popup-example-btn:hover { border-color: #ccc; color: #333; background: #fafafa; }
+.more-popup .popup-footer { margin-top: 8px; font-size: 11px; color: #c0c0c0; text-align: center; white-space: nowrap; }
+
+/* 引用菜单（+按钮锚点） */
+.ai-panel .func-anchor {
+  position: relative; display: flex; align-items: center; flex-shrink: 0;
+}
+.ref-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 0; top: auto; background: #fff; border: 1px solid #e8e8e8;
+  border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); display: none; z-index: 110;
+  min-width: 172px; padding: 6px 0;
+}
+.ref-menu.show { display: block; }
+.ref-menu .ref-item {
+  padding: 9px 16px; font-size: 13px; color: #333; cursor: pointer; display: flex; align-items: center; gap: 10px;
+}
+.ref-menu .ref-item:hover { background: #f5f5f5; }
+.ref-menu .ref-item .ref-icon {
+  width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0; color: #666; background: #f0f0f0;
+}
+
+
+/* 技能菜单（⚡ 按钮锚点，对齐 Cowork） */
+.ai-panel .skill-anchor { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.skill-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 0; top: auto; background: #fff; border: 1px solid #e8e8e8;
+  border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); display: none; z-index: 110;
+  width: 220px; padding: 8px 0; max-height: 320px; overflow-y: auto;
+}
+.skill-menu .skill-empty {
+  display: none; padding: 12px 14px; font-size: 12px; color: #999; text-align: center;
+}
+.skill-menu.is-empty .skill-empty { display: block; }
+.skill-menu.is-empty .skill-list { display: none; }
+.skill-menu.show { display: block; }
+.skill-menu .sm-search {
+  margin: 0 10px 6px; padding: 7px 10px; border: 1px solid #e0e0e0; border-radius: 6px;
+  font-size: 12px; width: calc(100% - 20px); outline: none; color: #333;
+}
+.skill-menu .sm-search:focus { border-color: #4d8cf5; }
+.skill-menu .sm-label { padding: 6px 14px 4px; font-size: 11px; color: #999; }
+.skill-menu .skill-item {
+  padding: 8px 14px; font-size: 13px; color: #333; cursor: pointer; display: flex; align-items: center; gap: 10px;
+  border-radius: 0;
+}
+.skill-menu .skill-item:hover { background: #f0f5ff; }
+.skill-menu .skill-item .skill-badge {
+  width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; flex-shrink: 0; color: #fff;
+}
+.skill-menu .skill-item .skill-badge.blue { background: #4d8cf5; }
+.skill-menu .skill-item .skill-badge.purple { background: #9b7ed8; }
+.skill-menu .skill-item .skill-badge.orange { background: #f5a623; }
+.skill-menu .skill-item .skill-badge.green { background: #4caf50; }
+.skill-menu .skill-item .skill-badge.red { background: #e57373; }
+.skill-menu .skill-item .skill-badge.teal { background: #26a69a; }
+.skill-menu .skill-item .skill-badge.cyan { background: #00acc1; }
+
+/* 模型选择（锚定在模型按钮上方） */
+.ai-panel .model-anchor {
+  position: relative; display: flex; align-items: center; flex-shrink: 0;
+}
+.model-menu {
+  position: absolute; bottom: calc(100% + 6px); right: 0; left: auto; top: auto;
+  background: #fff; border: 1px solid #e8e8e8;
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.12); display: none; z-index: 110;
+  width: 260px; padding: 8px 0; max-height: 400px; overflow-y: auto;
+}
+.model-menu.show { display: block; }
+.model-menu .mm-label { padding: 8px 16px 4px; font-size: 11px; color: #999; }
+.model-menu .mm-item {
+  padding: 8px 16px; cursor: pointer; transition: background 0.15s;
+}
+.model-menu .mm-item:hover { background: #f5f5f5; }
+.model-menu .mm-item .mm-name { font-size: 13px; color: #333; font-weight: 500; }
+.model-menu .mm-item .mm-desc { font-size: 11px; color: #999; margin-top: 1px; }
+.model-menu .mm-item.active .mm-name { color: #4d8cf5; }
+
+/* 暗词提示（底部居中；仅「快速建表」可点击） */
+.hint-text {
+  position: absolute; bottom: 36px; left: 0; right: 0;
+  display: none; justify-content: center; align-items: center;
+  z-index: 50;
+}
+.hint-text.show { display: flex; }
+.hint-text .hint-line {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #c0c0c0; line-height: 1;
+}
+.hint-text .hint-prefix { line-height: 1; }
+.hint-text .hint-quick-build {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin: 0; padding: 2px 10px 2px 7px;
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+  cursor: pointer; font-family: inherit; font-size: 13px; line-height: 1;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, color 0.15s;
+}
+.hint-text .hint-quick-build:hover {
+  border-color: rgba(124, 58, 237, 0.55);
+  background: linear-gradient(180deg, #f5f0ff 0%, #ede9fe 100%);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.18);
+}
+.hint-text .hint-quick-build:active {
+  border-color: #7c3aed;
+  background: linear-gradient(180deg, #ede9fe 0%, #ddd6fe 100%);
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.25) inset;
+}
+.hint-text .hint-quick-build:focus-visible {
+  outline: 2px solid rgba(124, 58, 237, 0.45);
+  outline-offset: 2px;
+}
+.hint-text .hint-quick-build .hq-icon {
+  width: 16px; height: 16px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: transform 0.15s, filter 0.15s;
+}
+.hint-text .hint-quick-build .hq-icon svg {
+  width: 16px; height: 16px; display: block;
+}
+.hint-text .hint-quick-build:hover .hq-icon {
+  transform: scale(1.06);
+  filter: saturate(1.12) brightness(0.96);
+}
+.hint-text .hint-quick-build:active .hq-icon {
+  transform: scale(0.98);
+}
+.hint-text .hint-quick-build .hq-text {
+  font-weight: 500; line-height: 1;
+  color: #7c3aed;
+  transition: color 0.15s;
+}
+.hint-text .hint-quick-build:hover .hq-text {
+  color: #5b21b6;
+  font-weight: 600;
+}
+.hint-text .hint-quick-build:active .hq-text {
+  color: #4c1d95;
+  font-weight: 600;
+}
+
+/* ============ 侧边栏 ============ */
+.ai-sidebar {
+  width: 420px; background: #f3f4f6; border-left: 1px solid #e5e5e5; display: none; flex-direction: column;
+  flex-shrink: 0; z-index: 50;
+}
+.ai-sidebar.show { display: flex; }
+.ai-sidebar .sidebar-header {
+  height: 52px; display: flex; align-items: center; padding: 0 16px; flex-shrink: 0; background: #f3f4f6;
+}
+.ai-sidebar .sidebar-header .sb-brand { display: flex; align-items: center; gap: 8px; }
+.ai-sidebar .sidebar-header .sb-title { font-size: 15px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.2px; }
+.ai-sidebar .sidebar-header .sb-tag {
+  font-size: 11px; font-weight: 500; color: #fff; background: #22a06b; padding: 2px 8px; border-radius: 4px; line-height: 1.3;
+}
+.ai-sidebar .sidebar-header .sb-actions { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+.ai-sidebar .sidebar-header .sb-actions button {
+  width: 32px; height: 32px; background: none; border: none; cursor: pointer; font-size: 16px; color: #8c8c8c;
+  display: flex; align-items: center; justify-content: center; border-radius: 6px; padding: 0;
+}
+.ai-sidebar .sidebar-header .sb-actions button:hover { background: rgba(0,0,0,0.05); color: #555; }
+.ai-sidebar .sidebar-header .sb-actions button svg { width: 18px; height: 18px; stroke: #8c8c8c; fill: none; stroke-width: 1.6; }
+.ai-sidebar .sidebar-header .sb-actions button:hover svg { stroke: #555; }
+
+.ai-sidebar .sidebar-body {
+  flex: 1; overflow-y: auto; padding: 0 16px 16px; background: #f3f4f6;
+}
+.ai-sidebar .sidebar-body:has(> .sb-home) {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 20px 16px 28px;
+}
+.ai-sidebar .sidebar-footer {
+  flex-shrink: 0; padding: 0 16px 14px; background: #f3f4f6;
+}
+.ai-sidebar .sb-input-box {
+  background: #fff; border: 1px solid #e8e8e8; border-radius: 20px; padding: 12px 14px 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.ai-sidebar .sb-input.prompt-editor {
+  width: 100%; border: none; outline: none; font-size: 13px; color: #333;
+  background: transparent; line-height: 1.5; padding: 0; margin-bottom: 8px; font-family: inherit;
+  min-height: 22px; max-height: 120px; overflow-y: hidden; box-sizing: border-box;
+  word-break: break-word; white-space: pre-wrap;
+}
+.ai-sidebar .sb-input.prompt-editor:empty::before {
+  content: attr(data-placeholder); color: #b8b8b8; pointer-events: none;
+}
+.ai-sidebar .sb-input-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ai-sidebar .sb-toolbar-left { display: flex; align-items: center; gap: 2px; }
+.ai-sidebar .sb-toolbar-right { display: flex; align-items: center; gap: 6px; }
+.ai-sidebar .sb-func-btn {
+  width: 28px; height: 28px; background: none; border: none; cursor: pointer; font-size: 16px; color: #999;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 6px;
+}
+.ai-sidebar .sb-func-btn:hover { color: #666; background: #f5f5f5; }
+.ai-sidebar .sb-model {
+  font-size: 12px; color: #666; border: none; background: transparent; padding: 4px 6px; cursor: pointer;
+  display: flex; align-items: center; gap: 2px; border-radius: 6px;
+}
+.ai-sidebar .sb-model:hover { background: #f5f5f5; }
+.ai-sidebar .sb-send {
+  width: 30px; height: 30px; background: #e8e8e8; color: #bbb; border: none; border-radius: 50%; cursor: pointer;
+  font-size: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+}
+.ai-sidebar .sb-send.active { background: #222; color: #fff; }
+.ai-sidebar .sb-ai-disclaimer {
+  text-align: center; font-size: 11px; color: #c5c5c5; margin-top: 10px; line-height: 1;
+}
+
+/* 侧边栏首页（整体垂直居中，标题与卡片左对齐） */
+.sb-home {
+  display: flex; flex-direction: column; align-items: stretch;
+  width: 100%; padding: 0; flex-shrink: 0;
+}
+.sb-home .sb-home-title {
+  font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; letter-spacing: -0.3px;
+  text-align: left;
+}
+.sb-home .sb-home-sub {
+  font-size: 13px; color: #999; margin-bottom: 24px; text-align: left;
+}
+.sb-home .sb-feature-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.sb-home .sb-feature-card {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  background: #fff; border: 1px solid #ebebeb; border-radius: 12px;
+  cursor: pointer; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  min-height: 48px;
+}
+.sb-home .sb-feature-card:hover {
+  border-color: #d5d5d5; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.sb-home .sb-feature-card .sf-icon {
+  width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sb-home .sb-feature-card .sf-icon svg {
+  width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.sb-home .sb-feature-card .sf-icon.purple { background: #f0ebff; color: #9b7ed8; }
+.sb-home .sb-feature-card .sf-icon.orange { background: #fff4e6; color: #e8952a; }
+.sb-home .sb-feature-card .sf-icon.green { background: #e8f8ef; color: #3daf6a; }
+.sb-home .sb-feature-card .sf-icon.blue { background: #e8f2ff; color: #4d8cf5; }
+.sb-home .sb-feature-card .sf-text {
+  flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; color: #333;
+}
+.sb-home .sb-feature-card .sf-text strong {
+  font-weight: 600; color: #1a1a1a; margin-right: 6px;
+}
+.sb-home .sb-feature-card .sf-text span { color: #888; font-weight: 400; }
+
+/* 侧边栏对话内容 */
+.chat-msg { margin-bottom: 16px; }
+.chat-msg.user { }
+.chat-msg.user .msg-content {
+  background: #e8f0fe; padding: 10px 14px; border-radius: 12px 12px 2px 12px; font-size: 13px; color: #333;
+  display: block; max-width: 100%;
+}
+.chat-msg.user .sb-attach-card {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; margin: 0 8px 8px 0;
+  border: 1px solid #e8e8e8; border-radius: 8px; background: #fff; font-size: 12px; color: #333;
+}
+.chat-msg.user .sb-attach-card--image { border-color: #d6e4ff; background: #f5f8ff; }
+.chat-msg.user .sb-attach-card .sb-attach-icon {
+  width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.chat-msg.user .sb-attach-card .sb-attach-icon--image { background: #eef3fb; color: #5b8def; }
+.chat-msg.user .sb-attach-card .sb-attach-icon--file { background: #f2f3f5; color: #8a9199; font-size: 14px; }
+.chat-msg.user .sb-attach-card .sb-attach-icon svg { width: 16px; height: 16px; display: block; }
+.chat-msg.user .sb-skill-ref {
+  display: block; margin: 0 0 8px; padding: 2px 8px; border-radius: 6px; width: fit-content;
+  background: #f0edfa; color: #7b5ea7; font-size: 12px;
+}
+.chat-msg.user .sb-user-text { display: block; line-height: 1.6; }
+.chat-msg.user .sb-user-text--inline { display: inline; line-height: 1.6; }
+.chat-msg.ai .msg-content {
+  background: #f7f8fa; padding: 12px 14px; border-radius: 12px 12px 12px 2px; font-size: 13px; color: #333;
+  line-height: 1.7;
+}
+.chat-msg.ai .msg-content .step { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.chat-msg.ai .msg-content .step .check { color: #4caf50; }
+.chat-msg.ai .msg-content .step .loading { color: #ff9800; }
+.chat-msg.ai .msg-content .value-item { display: flex; align-items: flex-start; gap: 6px; margin: 3px 0; font-size: 12px; }
+.chat-msg.ai .msg-content .value-check { color: #4caf50; flex-shrink: 0; }
+.chat-msg.ai .msg-content .iterate-title { font-size: 12px; color: #666; margin-top: 10px; margin-bottom: 4px; }
+.chat-msg.ai .msg-content .iterate-item { font-size: 12px; color: #888; margin: 2px 0; padding-left: 4px; }
+.chat-msg.ai .error-msg { color: #e53935; }
+
+/* 澄清卡片 */
+.clarify-card {
+  background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 16px; margin-top: 8px;
+}
+.clarify-card .cc-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 4px; }
+.clarify-card .cc-subtitle { font-size: 12px; color: #888; margin-bottom: 12px; }
+.clarify-card .cc-option {
+  padding: 8px 12px; border: 1px solid #e8e8e8; border-radius: 8px; font-size: 13px; color: #333;
+  cursor: pointer; margin-bottom: 6px; transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.clarify-card .cc-option:hover { border-color: #4d8cf5; background: #f8fbff; }
+.clarify-card .cc-option.selected { border-color: #4d8cf5; background: #e8f0fe; color: #4d8cf5; }
+.clarify-card .cc-option .radio { width: 16px; height: 16px; border: 2px solid #d9d9d9; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.clarify-card .cc-option.selected .radio { border-color: #4d8cf5; }
+.clarify-card .cc-option.selected .radio::after { content: ''; width: 8px; height: 8px; background: #4d8cf5; border-radius: 50%; }
+.clarify-card .cc-confirm {
+  margin-top: 10px; width: 100%; padding: 8px; background: #4d8cf5; color: #fff; border: none;
+  border-radius: 8px; font-size: 13px; cursor: pointer; transition: background 0.2s;
+}
+.clarify-card .cc-confirm:hover { background: #3a7ae0; }
+.clarify-card .cc-confirm:disabled { background: #ccc; cursor: not-allowed; }
+.clarify-card .cc-detected {
+  background: #f7f8fa; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 12px; line-height: 1.55;
+}
+.clarify-card .cc-detected-item { margin: 6px 0; color: #444; }
+.clarify-card .cc-detected-item strong { display: block; color: #222; font-size: 12px; margin-bottom: 2px; }
+.clarify-card .cc-detected-item span { color: #666; }
+.clarify-card .cc-option--recommended { border-color: #b8d4fb; background: #f0f6ff; }
+.clarify-card .cc-option .cc-rec-tag {
+  font-size: 11px; color: #4d8cf5; background: #e8f0fe; padding: 1px 6px; border-radius: 4px; margin-left: 4px;
+}
+
+/* ============ 上传文件 · 统一文件管理器（本地 + 云盘） ============ */
+.insert-attach-overlay {
+  position: fixed; inset: 0; z-index: 280; background: rgba(0,0,0,0.35);
+  display: none; align-items: center; justify-content: center;
+}
+.insert-attach-overlay.show { display: flex; }
+.insert-attach-fm {
+  width: 820px; max-width: 94vw; height: 520px; max-height: 88vh;
+  background: #fff; border-radius: 4px; box-shadow: 0 12px 40px rgba(0,0,0,0.22);
+  display: flex; flex-direction: column; overflow: hidden; font-size: 12px; color: #333;
+}
+.insert-attach-fm .fm-titlebar {
+  height: 36px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px; border-bottom: 1px solid #e8e8e8; flex-shrink: 0;
+}
+.insert-attach-fm .fm-titlebar h3 { font-size: 13px; font-weight: 600; margin: 0; }
+.insert-attach-fm .fm-win-btns { display: flex; gap: 10px; color: #999; font-size: 14px; }
+.insert-attach-fm .fm-win-btns button {
+  border: none; background: none; cursor: pointer; color: #666; padding: 2px 6px; line-height: 1;
+}
+.insert-attach-fm .fm-win-btns button:hover { background: #f0f0f0; }
+.insert-attach-fm .fm-body { flex: 1; display: flex; min-height: 0; }
+.insert-attach-fm .fm-sidebar {
+  width: 168px; background: #f5f6f8; border-right: 1px solid #e8e8e8;
+  display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+}
+.insert-attach-fm .fm-nav-item {
+  padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; color: #444;
+}
+.insert-attach-fm .fm-nav-item:hover { background: #eceef2; }
+.insert-attach-fm .fm-nav-item.active { background: #e3eafc; color: #2b579a; }
+.insert-attach-fm .fm-nav-section { padding: 10px 14px 4px; font-size: 11px; color: #999; }
+.insert-attach-fm .fm-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.insert-attach-fm .fm-toolbar {
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+}
+.insert-attach-fm .fm-toolbar .fm-nav-btn {
+  width: 26px; height: 26px; border: 1px solid #e0e0e0; background: #fff; border-radius: 3px; cursor: pointer; color: #666;
+}
+.insert-attach-fm .fm-path {
+  flex: 1; min-width: 0; padding: 4px 8px; border: 1px solid #e8e8e8; border-radius: 3px;
+  font-size: 11px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.insert-attach-fm .fm-search {
+  width: 140px; padding: 4px 8px; border: 1px solid #e8e8e8; border-radius: 3px; font-size: 11px;
+}
+.insert-attach-fm .fm-list-wrap { flex: 1; overflow: auto; padding: 0 8px; }
+.insert-attach-fm .fm-list-head {
+  display: grid; grid-template-columns: 1fr 130px 72px; gap: 8px;
+  padding: 6px 8px; color: #999; font-size: 11px; border-bottom: 1px solid #f0f0f0; position: sticky; top: 0; background: #fff;
+}
+.insert-attach-fm .fm-row {
+  display: grid; grid-template-columns: 1fr 130px 72px; gap: 8px;
+  padding: 6px 8px; cursor: pointer; border-radius: 3px; align-items: center;
+}
+.insert-attach-fm .fm-row:hover { background: #f5f8ff; }
+.insert-attach-fm .fm-row.selected { background: #e8f0fe; }
+.insert-attach-fm .fm-row .fm-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.insert-attach-fm .fm-row .fm-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.insert-attach-fm .fm-icon { flex-shrink: 0; display: inline-flex; align-items: center; }
+.insert-attach-fm .fm-type-icon {
+  width: 20px; height: 20px; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #7a8494; flex-shrink: 0;
+}
+.insert-attach-fm .fm-type-icon svg { display: block; width: 14px; height: 14px; }
+.insert-attach-fm .fm-type-icon--folder { background: #f6f3eb; color: #c9a227; }
+.insert-attach-fm .fm-type-icon--image { background: #eef3fb; color: #5b8def; }
+.insert-attach-fm .fm-type-icon--word { background: #eef3fc; color: #4a7cd6; }
+.insert-attach-fm .fm-type-icon--excel { background: #edf6f0; color: #3d9a5d; }
+.insert-attach-fm .fm-type-icon--pdf { background: #fdf0ef; color: #e05a4e; }
+.insert-attach-fm .fm-type-icon--ppt { background: #fef4ee; color: #e07a3a; }
+.insert-attach-fm .fm-type-icon--file { background: #f2f3f5; color: #8a9199; }
+.insert-attach-fm .fm-footer {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid #e8e8e8; flex-shrink: 0;
+}
+.insert-attach-fm .fm-footer label { color: #666; white-space: nowrap; }
+.insert-attach-fm .fm-footer input, .insert-attach-fm .fm-footer select {
+  height: 28px; border: 1px solid #d9d9d9; border-radius: 3px; padding: 0 8px; font-size: 12px;
+}
+.insert-attach-fm .fm-filename { flex: 1; min-width: 120px; }
+.insert-attach-fm .fm-type { width: 120px; }
+.insert-attach-fm .fm-actions { margin-left: auto; display: flex; gap: 8px; }
+.insert-attach-fm .fm-btn {
+  min-width: 72px; height: 30px; padding: 0 16px; border-radius: 4px; font-size: 13px; cursor: pointer;
+}
+.insert-attach-fm .fm-btn-primary { background: #4d8cf5; color: #fff; border: none; }
+.insert-attach-fm .fm-btn-primary:disabled { background: #b8d4fb; cursor: not-allowed; }
+.insert-attach-fm .fm-btn-primary:not(:disabled):hover { background: #3a7ae0; }
+.insert-attach-fm .fm-btn-default { background: #fff; color: #333; border: 1px solid #d9d9d9; }
+.insert-attach-fm .fm-btn-default:hover { border-color: #4d8cf5; color: #4d8cf5; }
+/* ============ 遮罩 ============ */
+/* 低于 .ai-panel(100)，避免挡住面板内下拉（更多/+/技能/模型）的点击 */
+.overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 90; display: none; }
+.overlay.show { display: block; z-index: 99; }
+.overlay.high-z { z-index: 199; background: rgba(0,0,0,0.15); }
+
+/* ============ 操作提示条（标题栏：撤销/重做右侧，对应 WPS 顶栏演示区） ============ */
+.sp-titlebar .guide-bar {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(30,30,50,0.78); color: #fff;
+  padding: 2px 6px 2px 8px; font-size: 10px; line-height: 1.35;
+  border-radius: 4px;
+  max-width: min(52vw, 640px);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.sp-titlebar .guide-bar:hover { opacity: 1; }
+.sp-titlebar .guide-bar .guide-text {
+  opacity: 0.9; font-size: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex-shrink: 1; min-width: 0; max-width: 140px;
+}
+.sp-titlebar .guide-bar .guide-actions { display: flex; gap: 2px; flex-shrink: 0; align-items: center; }
+.sp-titlebar .guide-bar .guide-btn {
+  padding: 1px 4px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2);
+  background: transparent; color: rgba(255,255,255,0.75);
+  font-size: 9px; line-height: 1.3; cursor: pointer; white-space: nowrap;
+}
+.sp-titlebar .guide-bar .guide-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.sp-titlebar .guide-bar .guide-btn.primary { background: #4d8cf5; border-color: #4d8cf5; }
+
+/* 动画 */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.animate-in { animation: fadeIn 0.3s ease; }
+.loading-pulse { animation: pulse 1.5s infinite; }
+</style>
+</head>
+<body>
+
+<!-- ==================== 新建页 ==================== -->
+<div id="newPage">
+  <div class="np-topbar">
+    <span class="logo">WPS Office</span>
+    <div class="search-bar">🔍 开学季 点击enter回车键跳转</div>
+    <div class="right-icons">
+      <span>🔔</span><span>⬜</span><span>⚙</span>
+    </div>
+  </div>
+  <div class="np-body">
+    <div class="np-sidebar">
+      <button class="btn-new">＋ 新建</button>
+      <button class="btn-open" id="btnOpenFile" type="button">📂 打开</button>
+      <div class="nav-item active">🕐 最近</div>
+      <div class="nav-item">⭐ 星标</div>
+      <div class="nav-item">👥 共享</div>
+      <div class="nav-section">云盘</div>
+      <div class="nav-item">📁 我的云文档</div>
+      <div class="nav-item">📚 知识库</div>
+      <div class="nav-item">💻 我的设备</div>
+      <div class="nav-section">本地</div>
+      <div class="nav-item">🖥 桌面</div>
+      <div class="nav-item">📄 文档</div>
+    </div>
+    <div class="np-main">
+      <div class="section-title">新建表格</div>
+      <div class="np-cards">
+        <div class="np-card blank-card" id="btnNewBlank" title="点击新建空白表格">
+          <div class="card-icon">＋</div>
+          <div class="card-text">空白表格</div>
+        </div>
+        <div class="np-card ai-card" id="btnAiEntry" title="文件/图片 一键转表">
+          <div class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="aiCardGrad" x1="8" y1="26" x2="24" y2="6" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#9B5CF5"/><stop offset="1" stop-color="#5B8DEF"/>
+                </linearGradient>
+              </defs>
+              <rect x="6" y="7" width="20" height="18" rx="2" stroke="url(#aiCardGrad)" stroke-width="1.6"/>
+              <path d="M6 13h20M14 13v12" stroke="url(#aiCardGrad)" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="card-text-wrap"><div class="card-text">文件/图片 一键转表</div></div>
+        </div>
+      </div>
+      <div class="section-title">最近 <span class="refresh">↻</span></div>
+      <div style="font-size:13px; color:#999;">
+        <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; gap:20px;">
+          <span style="color:#4d8cf5;">📊</span> <span style="flex:1;">27_7869_2026_06_01.xlsx</span> <span>我的设备</span> <span>我</span> <span>昨天 21:03</span>
+        </div>
+        <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; gap:20px;">
+          <span style="color:#4d8cf5;">📊</span> <span style="flex:1;">04月供应商开票与付款申请汇总.xlsx</span> <span>我的设备</span> <span>我</span> <span>昨天 21:03</span>
+        </div>
+        <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; gap:20px;">
+          <span style="color:#4d8cf5;">📄</span> <span style="flex:1;">weekly_report_20260601.docx</span> <span>我的设备</span> <span>我</span> <span>昨天 21:05</span>
+        </div>
+        <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; gap:20px;">
+          <span style="color:#4d8cf5;">📊</span> <span style="flex:1;">Result_未命名82.sql_06012018.xlsx</span> <span>我的设备</span> <span>我</span> <span>昨天 21:03</span>
+        </div>
+        <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; display:flex; gap:20px;">
+          <span style="color:#4d8cf5;">📊</span> <span style="flex:1;">profit_analysis_tmp.xlsx</span> <span>我的设备</span> <span>我</span> <span>昨天 17:10</span>
+        </div>
+      </div>
+    </div>
+    <div class="np-right">
+      <div class="promo">精选推荐</div>
+      <button class="promo-btn">立即续费</button>
+      <div class="func-title">功能推荐</div>
+      <div class="func-item">📄 WPS简历</div>
+      <div class="func-item">🎓 WPS高考</div>
+      <div class="func-item">🧠 思维导图</div>
+      <div class="func-item">🔄 在线流程图</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 表格页 ==================== -->
+<div id="spreadsheetPage">
+  <!-- 标题栏 -->
+  <div class="sp-titlebar">
+    <div class="menu-items">
+      <span class="menu-item">☰ 文件</span>
+      <span class="menu-item save-status">自动保存 ●</span>
+      <span class="menu-item">💾</span>
+      <span class="menu-item">↩</span>
+      <span class="menu-item">↪</span>
+    </div>
+    <div class="guide-bar-slot">
+      <div class="guide-bar" id="guideBar">
+        <span class="guide-text" id="guideText">💡 可切换 Sheet 体验空白重算与面板形态</span>
+        <div class="guide-actions">
+          <button class="guide-btn" id="guideClearBlankBtn">清空整本</button>
+          <button class="guide-btn" id="guideClearSheetBtn">清当前Sheet</button>
+          <button class="guide-btn" id="guideDeleteSheetBtn">删当前Sheet</button>
+          <button class="guide-btn" id="guideResetBtn">重置Demo</button>
+          <button class="guide-btn" id="guideSimFailBtn">模拟失败</button>
+        </div>
+      </div>
+    </div>
+    <div class="right-area">
+      <button class="wps-sidebar-btn" id="toggleSidebarBtn" type="button" title="打开 WPS 灵犀侧边栏">✨ WPS 灵犀</button>
+    </div>
+  </div>
+
+  <!-- Ribbon -->
+  <div class="sp-ribbon">
+    <div class="ribbon-tabs">
+      <span class="ribbon-tab active">开始</span>
+      <span class="ribbon-tab">插入</span>
+      <span class="ribbon-tab">页面</span>
+      <span class="ribbon-tab">公式</span>
+      <span class="ribbon-tab">数据</span>
+      <span class="ribbon-tab">审阅</span>
+      <span class="ribbon-tab">视图</span>
+      <span class="ribbon-tab">工具</span>
+      <span class="ribbon-tab">会员专享</span>
+      <span class="ribbon-tab">效率</span>
+    </div>
+    <div class="ribbon-tools">
+      <div class="tool-group">
+        <button class="tool-btn" title="格式刷">🖌</button>
+        <button class="tool-btn" id="btnGridPaste" title="粘贴" type="button">📋</button>
+        <button class="tool-btn" title="剪切">✂</button>
+      </div>
+      <div class="tool-group">
+        <select class="font-select"><option>宋体</option></select>
+        <select class="size-select"><option>11</option></select>
+        <button class="tool-btn">A↑</button>
+        <button class="tool-btn">A↓</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn"><b>B</b></button>
+        <button class="tool-btn"><i>I</i></button>
+        <button class="tool-btn"><u>U</u></button>
+        <button class="tool-btn">🔤</button>
+        <button class="tool-btn">⬜</button>
+        <button class="tool-btn">🎨</button>
+        <button class="tool-btn">A</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn">≡</button>
+        <button class="tool-btn">≡</button>
+        <button class="tool-btn">≡</button>
+        <button class="tool-btn">⤶</button>
+        <button class="tool-btn">⊞</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn label-btn">常规</button>
+        <button class="tool-btn">💰</button>
+        <button class="tool-btn">%</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn label-btn">行列▾</button>
+        <button class="tool-btn">⊞</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn label-btn" id="btnGridStyle" type="button">样式▾</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn label-btn">条件▾</button>
+        <button class="tool-btn label-btn" id="btnGridImport" type="button" title="导入">格式▾</button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn label-btn">填充</button>
+        <button class="tool-btn label-btn">求和</button>
+        <button class="tool-btn label-btn">排序</button>
+        <button class="tool-btn label-btn">筛选</button>
+        <button class="tool-btn label-btn">查找</button>
+        <button class="tool-btn label-btn quick-build-btn" id="menuAiBtn" type="button" title="快速建表">✨ 快速建表</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 公式栏 -->
+  <div class="sp-formula-bar">
+    <div class="cell-ref">A1</div>
+    <span class="fx-icon">🔍 <i>fx</i></span>
+    <input class="formula-input" readonly />
+  </div>
+
+  <!-- 内容区 -->
+  <div class="sp-content">
+    <div class="sp-grid-area" id="gridArea">
+      <table class="grid-table" id="gridTable"></table>
+
+      <!-- 暗词提示 -->
+      <div class="hint-text" id="hintText">
+        <span class="hint-line">
+          <span class="hint-prefix">双击Ctrl，AI帮你</span>
+          <button type="button" class="hint-quick-build" id="aiEntryBtn">
+            <span class="hq-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="hqAiGrad" x1="2" y1="18" x2="18" y2="2" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#5B4CFF"/>
+                    <stop offset="0.45" stop-color="#D946EF"/>
+                    <stop offset="1" stop-color="#38BDF8"/>
+                  </linearGradient>
+                  <linearGradient id="hqSparkGrad" x1="12" y1="2" x2="18" y2="8" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#A78BFA"/>
+                    <stop offset="1" stop-color="#67E8F9"/>
+                  </linearGradient>
+                </defs>
+                <path fill="url(#hqAiGrad)" d="M5.2 15.8L9.8 5.2l4.6 10.6h-1.9l-1-2.8H8.1l-1 2.8H5.2zm4.6-4.2h-1.6L9.8 8.4l-.8 3.2h1.6z"/>
+                <path fill="url(#hqSparkGrad)" d="M14.8 3.2l.55 1.35 1.35.55-1.35.55-.55 1.35-.55-1.35-1.35-.55 1.35-.55.55-1.35z"/>
+                <circle cx="4.2" cy="5.6" r="1.1" fill="#C4B5FD" opacity="0.85"/>
+                <circle cx="16.2" cy="14.2" r="0.75" fill="#7DD3FC" opacity="0.9"/>
+              </svg>
+            </span>
+            <span class="hq-text">快速建表</span>
+          </button>
+        </span>
+      </div>
+
+      <!-- AI推荐面板 -->
+      <div class="ai-panel" id="aiPanel">
+      <!-- 更多示例弹窗 -->
+      <div class="more-popup" id="morePopup">
+        <div class="popup-examples">
+          <div class="popup-example-btn" data-prompt="帮我做 [统计周期] 的 [部门/岗位类型] 员工工资核算表，包含姓名、部门、基本工资、绩效、五险一金、个税、实发工资和备注，自动计算实发工资和月度合计，金额用货币格式，生成汇总行">帮我算员工月度工资</div>
+          <div class="popup-example-btn" data-prompt="帮我做 [物资类型/仓库名称] 的库存出入台账，包含编号、物资、规格、单位、入库、出库、当前库存和备注，自动计算实时库存，库存低于 [预警阈值] 时标红">帮我管仓库库存出入</div>
+          <div class="popup-example-btn" data-prompt="帮我做 [项目类型/项目名称] 的进度跟踪表，包含任务、负责人、起止时间、进度、剩余天数和备注，自动计算剩余天数，用进度条展示完成率">帮我跟踪项目进度</div>
+          <div class="popup-example-btn" data-prompt="帮我做 [采购场景/申请部门] 的采购物资申请单，包含物料、规格、单位、数量、单价、金额、申请人、审批人和备注，自动计算总金额，金额用货币格式，生成汇总行">帮我做采购申请单</div>
+          <div class="popup-example-btn" data-prompt="帮我做 [业务类型/管理范围] 的供应商信息台账，包含名称、联系人、电话、地址、主营产品、合作状态和备注，列宽自适应内容">帮我管理供应商信息</div>
+        </div>
+        <div class="popup-footer">没有你要的？直接输入任何需求，AI都能做</div>
+      </div>
+
+      <div class="examples-row">
+        <div class="example-btn" data-prompt="帮我做 [统计周期/月份] 的日常收支流水表，记录 [使用场景/个人或家庭] 的收支情况，包含日期、摘要、分类、收入、支出、余额和备注，自动计算每日余额和月度合计，金额用货币格式，支出标红"><span class="icon purple"><svg viewBox="0 0 16 16"><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M4 4l2 2M10 10l2 2M12 4l-2 2M6 10l-2 2"/></svg></span> 帮我记录收支流水</div>
+        <div class="example-btn" data-prompt="帮我统计 [统计周期] 的 [部门/团队] 员工考勤，包含姓名、部门、应出勤、实际出勤、请假、迟到、加班、出勤率和备注，自动计算出勤率，用百分比格式，生成月度汇总"><span class="icon blue"><svg viewBox="0 0 16 16"><path d="M2.5 13.5h11"/><path d="M4.5 13.5V8M8 13.5V4.5M11.5 13.5V10"/></svg></span> 帮我统计员工考勤</div>
+        <div class="example-btn" data-prompt="帮我统计 [统计周期] 的 [销售团队/区域] 销售业绩，包含销售人员、客户、订单金额、回款、未回款、回款率和备注，自动计算回款率和总业绩，金额用货币格式，生成汇总行"><span class="icon orange"><svg viewBox="0 0 16 16"><path d="M2.5 13.5h11"/><path d="M3.5 10.5l3-3 2.5 2 4.5-5"/></svg></span> 帮我统计销售业绩</div>
+        <button class="more-btn" id="moreBtnTrigger">··· 更多</button>
+        <button type="button" class="panel-close-btn" id="closePanelBtn" aria-label="关闭">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4L4 12"/></svg>
+        </button>
+      </div>
+
+      <div class="input-row">
+        <div class="input-box">
+          <div class="input-text-area">
+            <div class="main-input prompt-editor show-placeholder" id="mainInput" contenteditable="true" data-placeholder="告诉我你要做什么表，可上传图片、PDF、Word、网页链接、聊天截图等内容"></div>
+          </div>
+          <input type="file" id="localFileInput" hidden multiple
+            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.json" />
+          <div class="input-toolbar">
+            <div class="input-toolbar-left">
+              <div class="func-anchor">
+                <div class="ref-menu" id="refMenu">
+                  <div class="ref-item" data-action="local"><span class="ref-icon">📄</span> 本地文件</div>
+                  <div class="ref-item" data-action="cloud"><span class="ref-icon">☁️</span> 我的WPS文件</div>
+                </div>
+                <button class="func-btn" id="refBtn" title="引用">＋</button>
+              </div>
+              <div class="func-anchor skill-anchor">
+                <div class="skill-menu" id="skillMenu">
+                  <input class="sm-search" id="skillSearch" placeholder="搜索技能" type="text" />
+                  <div class="sm-label">表格</div>
+                  <div class="skill-list" id="skillList"></div>
+                  <div class="skill-empty">无匹配技能</div>
+                </div>
+                <button class="func-btn" id="skillBtn" title="表格技能">⚡</button>
+              </div>
+            </div>
+            <div class="input-toolbar-right">
+              <div class="func-anchor model-anchor">
+                <div class="model-menu" id="modelMenu">
+                  <div class="mm-label">内置模型</div>
+                  <div class="mm-item active" data-model="自动"><div class="mm-name">自动</div><div class="mm-desc">按场景匹配最佳模型</div></div>
+                  <div class="mm-item" data-model="DeepSeek V4 Flash Thinking"><div class="mm-name">DeepSeek V4 Flash Thinking</div><div class="mm-desc">轻量全能推理模型(深度思考)</div></div>
+                  <div class="mm-item" data-model="DeepSeek V4 Flash"><div class="mm-name">DeepSeek V4 Flash</div><div class="mm-desc">轻量快速的全能推理模型</div></div>
+                  <div class="mm-item" data-model="DeepSeek V4 Pro"><div class="mm-name">DeepSeek V4 Pro</div><div class="mm-desc">旗舰全能推理模型</div></div>
+                  <div class="mm-item" data-model="Kimi-K2.6"><div class="mm-name">Kimi-K2.6</div><div class="mm-desc">多Agent集群与长程编程旗舰</div></div>
+                  <div class="mm-item" data-model="GLM-5-Turbo"><div class="mm-name">GLM-5-Turbo</div><div class="mm-desc">智谱硬核推理引擎</div></div>
+                  <div class="mm-item" data-model="Qwen3.6-Max"><div class="mm-name">Qwen3.6-Max-Preview</div><div class="mm-desc">百万级上下文全模态推理模型</div></div>
+                </div>
+                <button class="model-btn" id="modelBtn" type="button"><span class="model-label">自动</span> <span class="arrow">∨</span></button>
+              </div>
+              <button class="send-btn disabled" id="sendBtn" type="button">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- AI侧边栏 -->
+    <div class="ai-sidebar" id="aiSidebar">
+      <div class="sidebar-header">
+        <div class="sb-brand">
+          <span class="sb-title" id="sidebarTitle">WPS 灵犀</span>
+          <span class="sb-tag" id="sidebarSubtitle">表格</span>
+        </div>
+        <div class="sb-actions">
+          <button type="button" title="新对话"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/><circle cx="12" cy="12" r="9"/></svg></button>
+          <button type="button" title="历史"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round"/></svg></button>
+          <button type="button" title="更多"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2" fill="#8c8c8c" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="#8c8c8c" stroke="none"/><circle cx="18" cy="12" r="1.2" fill="#8c8c8c" stroke="none"/></svg></button>
+          <button type="button" id="closeSidebar" title="收起侧边栏"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="12" height="14" rx="1"/><path d="M16 9l4 3-4 3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+      </div>
+      <div class="sidebar-body" id="sidebarBody">
+        <div class="sb-home" id="sbHome">
+          <div class="sb-home-title">从数字中洞察</div>
+          <div class="sb-home-sub">你可以试试</div>
+          <div class="sb-feature-list">
+            <div class="sb-feature-card" data-prompt="帮我创建表格并录入数据">
+              <div class="sf-icon purple"><svg viewBox="0 0 16 16"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M2.5 6.5h11M6.5 6.5v7"/></svg></div>
+              <div class="sf-text"><strong>快速建表</strong><span>帮我创建表格并录入数据</span></div>
+            </div>
+            <div class="sb-feature-card" data-prompt="帮我识别并标记表格中的重复数据">
+              <div class="sf-icon orange"><svg viewBox="0 0 16 16"><path d="M3 3h10l-4 5.5V13l-2 1v-3.5L3 3z"/></svg></div>
+              <div class="sf-text"><strong>数据清洗</strong><span>帮我识别并标记表格中的重复数据</span></div>
+            </div>
+            <div class="sb-feature-card" data-prompt="帮我写一份本周的工作周报。我的核心工作内容包括：[列举1-3项核心工作]。请按「本周回顾」、「核心数据与亮点」、「存在问题」和「下周计划」四个模块输出，语言精炼。">
+              <div class="sf-icon green"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4"/><path d="M10.5 10.5L14 14"/></svg></div>
+              <div class="sf-text"><strong>计算分析</strong><span>帮我计算核心指标并生成总结</span></div>
+            </div>
+            <div class="sb-feature-card" data-prompt="帮我生成图表展示关键指标的趋势分布">
+              <div class="sf-icon blue"><svg viewBox="0 0 16 16"><path d="M2.5 13.5h11"/><path d="M3.5 10.5l3-3 2.5 2 4.5-5"/></svg></div>
+              <div class="sf-text"><strong>可视化</strong><span>帮我生成图表展示关键指标的趋势分布</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="sb-input-box">
+          <div class="sb-input prompt-editor" id="sbInput" contenteditable="true" data-placeholder="请输入任务，交给我就帮你完成"></div>
+          <div class="sb-input-toolbar">
+            <div class="sb-toolbar-left">
+              <button type="button" class="sb-func-btn" title="引用">＋</button>
+              <button type="button" class="sb-func-btn" title="技能">⚡</button>
+            </div>
+            <div class="sb-toolbar-right">
+              <button type="button" class="sb-model">自动 <span style="font-size:10px;">∨</span></button>
+              <button type="button" class="sb-send" id="sbSend">↑</button>
+            </div>
+          </div>
+        </div>
+        <div class="sb-ai-disclaimer">内容由 AI 生成</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet标签栏 -->
+  <div class="sp-sheet-bar">
+    <div class="sheet-nav">
+      <button>◁</button><button>▷</button>
+    </div>
+    <div class="sheet-tabs" id="sheetTabs"></div>
+    <button class="add-sheet" id="addSheetBtn" type="button" title="新建工作表">＋</button>
+    <div class="bar-right">
+      <span>普通</span> <span>⊞</span> <span>分页</span> <span style="margin-left:8px;">100%</span>
+      <span>━━━━━◉━━━━━</span>
+    </div>
+  </div>
+</div>
+
+<!-- 遮罩层 -->
+<div class="overlay" id="overlay"></div>
+
+
+<!-- 上传文件：本地 + WPS 云盘统一文件管理器 -->
+<div class="insert-attach-overlay" id="insertAttachOverlay" aria-hidden="true">
+  <div class="insert-attach-fm" role="dialog" aria-labelledby="insertAttachTitle">
+    <div class="fm-titlebar">
+      <h3 id="insertAttachTitle">上传文件</h3>
+      <div class="fm-win-btns">
+        <button type="button" title="最小化">—</button>
+        <button type="button" title="最大化">□</button>
+        <button type="button" id="fmCloseBtn" title="关闭">×</button>
+      </div>
+    </div>
+    <div class="fm-body">
+      <div class="fm-sidebar" id="fmSidebar">
+        <div class="fm-nav-item" data-location="recent">🕐 最近</div>
+        <div class="fm-nav-section">WPS云盘</div>
+        <div class="fm-nav-item" data-location="cloud-docs">📁 我的云文档</div>
+        <div class="fm-nav-item" data-location="cloud-shared">👥 共享文件夹</div>
+        <div class="fm-nav-section">本地位置</div>
+        <div class="fm-nav-item" data-location="pc">🖥 此电脑</div>
+        <div class="fm-nav-item active" data-location="desktop">🖥 桌面</div>
+        <div class="fm-nav-item" data-location="documents">📄 文档</div>
+        <div class="fm-nav-item" data-location="downloads">⬇ 下载</div>
+        <div class="fm-nav-item" data-location="browse">⋯ 浏览</div>
+      </div>
+      <div class="fm-main">
+        <div class="fm-toolbar">
+          <button type="button" class="fm-nav-btn" title="后退">←</button>
+          <button type="button" class="fm-nav-btn" title="前进">→</button>
+          <button type="button" class="fm-nav-btn" title="向上">↑</button>
+          <button type="button" class="fm-nav-btn" title="刷新">↻</button>
+          <div class="fm-path" id="fmPath">此电脑 &gt; 磁盘 (C:) &gt; Users &gt; WPS &gt; 桌面</div>
+          <input type="text" class="fm-search" placeholder="在此电脑中搜索" readonly />
+        </div>
+        <div class="fm-list-wrap">
+          <div class="fm-list-head"><span>名称</span><span>修改时间</span><span>大小</span></div>
+          <div id="fmFileList"></div>
+        </div>
+        <div class="fm-footer">
+          <label>文件名称(N):</label>
+          <input type="text" class="fm-filename" id="fmFilename" value="" />
+          <label>文件类型(T):</label>
+          <select class="fm-type" id="fmFileType">
+            <option value="all">所有文件 (*)</option>
+            <option value="doc">Word 文档 (*.docx)</option>
+            <option value="image">图片 (*.png;*.jpg)</option>
+            <option value="sheet">表格 (*.xlsx)</option>
+          </select>
+          <div class="fm-actions">
+            <button type="button" class="fm-btn fm-btn-primary" id="fmOpenBtn" disabled>打开(O)</button>
+            <button type="button" class="fm-btn fm-btn-default" id="fmCancelBtn">取消</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<input type="file" id="fmBrowseInput" hidden multiple
+  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" />
+
+<script>
+// =============== 状态管理 ===============
+const State = {
+  SHOW: 'show',
+  COLLAPSED: 'collapsed',
+  DISMISSED: 'dismissed',
+  GENERATING: 'generating',
+  NON_BLANK: 'non_blank'
+};
+
+let currentState = null;
+/** 工作簿级：用户是否点击过【收起】（兼容 V2；关闭叉号走 panelDismissed） */
+let workbookCollapsed = false;
+/** 用户点击关闭：面板与快捷键提示均不展示 */
+let panelDismissed = false;
+/** 来自「创建空白表」：仅展示暗词，直至主动唤起（AI 建表等入口；空白表格入口不走暗词） */
+let showHintOnlyOnBlank = false;
+/** 首页「空白表格」入口：直接展示建表面板，不展示快捷键暗词 */
+let blankCardEntryFlow = false;
+/** 空白表格入口：点击面板外功能区按钮后收起面板（工作簿仍可空白，可再次唤起） */
+let blankCardPanelSuppressed = false;
+/** 首页 AI 建表入口：先选文件再侧边栏转表 */
+let aiFileEntryFlow = false;
+/** 当前 AI 建表入口转表任务上下文（文件 → 表格映射） */
+let currentAiEntryGenContext = null;
+
+/** 上传文件管理器 · 示意数据（本地/云盘共用列表） */
+const FM_MOCK_ENTRIES = {
+  desktop: [
+    { id: 'dir-test', type: 'folder', name: '测试', modified: '2026/06/01 12:00', size: '—' },
+    { id: 'dir-ic', type: 'folder', name: 'ic', modified: '2026/05/28 09:15', size: '—' },
+    { id: 'f-png', type: 'file', name: '截图.jpg', kind: 'image', modified: '2026/06/02 18:40', size: '1.2 MB' },
+    { id: 'f-png2', type: 'file', name: '表格截图.png', kind: 'image', modified: '2026/06/02 19:10', size: '896 KB' },
+    { id: 'f-doc1', type: 'file', name: '周报参考.docx', kind: 'word', modified: '2026/06/03 10:20', size: '86 KB' },
+    { id: 'f-doc2', type: 'file', name: '采购清单.docx', kind: 'word', modified: '2026/06/03 11:05', size: '52 KB' },
+    { id: 'f-xlsx', type: 'file', name: '工作簿3.xlsx', kind: 'excel', modified: '2026/06/04 08:30', size: '24 KB' },
+    { id: 'f-xlsx2', type: 'file', name: '销售明细表.xlsx', kind: 'excel', modified: '2026/06/04 09:00', size: '18 KB' },
+    { id: 'f-pdf', type: 'file', name: '设备台账.pdf', kind: 'pdf', modified: '2026/06/02 14:10', size: '312 KB' },
+    { id: 'f-pdf2', type: 'file', name: '巡检记录.pdf', kind: 'pdf', modified: '2026/06/02 15:20', size: '280 KB' },
+  ],
+  'cloud-docs': [
+    { id: 'c-png', type: 'file', name: '巡检现场图.png', kind: 'image', modified: '2026/06/01 15:00', size: '980 KB', source: 'cloud' },
+    { id: 'c-doc', type: 'file', name: '项目周报模板.docx', kind: 'word', modified: '2026/05/30 11:20', size: '78 KB', source: 'cloud' },
+  ],
+};
+
+const FM_PATH_LABELS = {
+  recent: '最近',
+  'cloud-docs': 'WPS云盘 &gt; 我的云文档',
+  'cloud-shared': 'WPS云盘 &gt; 共享文件夹',
+  pc: '此电脑',
+  desktop: '此电脑 &gt; 磁盘 (C:) &gt; Users &gt; WPS &gt; 桌面',
+  documents: '此电脑 &gt; 磁盘 (C:) &gt; Users &gt; WPS &gt; 文档',
+  downloads: '此电脑 &gt; 磁盘 (C:) &gt; Users &gt; WPS &gt; 下载',
+};
+
+const MULTI_WORD_DETECTED = {
+  '周报参考.docx': '识别到 6 列周报结构：项目名称、负责人、进度、本周完成、下周计划、风险点',
+  '采购清单.docx': '识别到采购清单条目：物料、规格、数量、单价、金额、申请人、审批状态',
+  '项目周报模板.docx': '识别到项目周报模板：模块划分、里程碑、完成率、风险与依赖',
+};
+
+let fmCurrentLocation = 'desktop';
+let fmSelectedIds = [];
+let fmBrowseFiles = [];
+let workbookIsBlank = true;
+let sidebarOpenedForGeneration = false;
+let lastInput = '';
+let currentSkill = '';
+let ctrlPressCount = 0;
+let ctrlTimer = null;
+let generatedTableType = null;
+/** 工作簿来源：null | 'opened-sales'（打开已有销售表演示） */
+let workbookSource = null;
+/** 建表面板已选本地附件 */
+let panelAttachments = [];
+let panelAttachmentIdSeq = 0;
+
+/** 多 Sheet 模拟（每 Sheet 独立 tableData；工作簿空白 = 全部 Sheet 无数据） */
+let sheets = [];
+let activeSheetId = 's1';
+let sheetIdCounter = 1;
+
+const $ = id => document.getElementById(id);
+
+function shortenSheetName(title) {
+  if (!title) return 'Sheet';
+  return title.length > 12 ? title.slice(0, 10) + '…' : title;
+}
+
+function createDefaultWorkbook() {
+  sheetIdCounter = 1;
+  sheets = [{ id: 's1', name: 'Sheet1', tableData: null, tableTypeId: null, manualContent: null }];
+  activeSheetId = 's1';
+  generatedTableType = null;
+  renderSheetTabs();
+  buildGrid();
+}
+
+function getActiveSheet() {
+  return sheets.find(s => s.id === activeSheetId) || sheets[0];
+}
+
+/** 模拟内核：任一 Sheet 有已提交数据/公式、格式变更或手动录入 → 工作簿非空白 */
+function computeWorkbookBlank() {
+  return sheets.every(s => !s.tableData && !s.manualContent);
+}
+
+function syncGeneratedTypeFromActive() {
+  const active = getActiveSheet();
+  generatedTableType = active && active.tableData ? (active.tableTypeId || active.tableData.id) : null;
+}
+
+/** 统一重校验入口（打开/切 Sheet/清空/删除后调用） */
+function revalidateBlankAndPanel(trigger) {
+  const wasBlank = workbookIsBlank;
+  workbookIsBlank = computeWorkbookBlank();
+  syncGeneratedTypeFromActive();
+
+  // 工作簿恢复空白 → 按入口恢复展示（空白表格入口：完整面板；其它：暗词提示）
+  const blankRestoreTriggers = ['clear-sheet', 'clear-workbook', 'delete-sheet', 'generation-failed'];
+  if (workbookIsBlank && (!wasBlank || blankRestoreTriggers.indexOf(trigger) >= 0)) {
+    panelDismissed = false;
+    if (blankCardEntryFlow) {
+      blankCardPanelSuppressed = false;
+    } else {
+      showHintOnlyOnBlank = true;
+    }
+  }
+
+  applyPanelDisplay();
+  return { blank: workbookIsBlank, trigger, wasBlank };
+}
+
+function renderSheetTabs() {
+  const container = $('sheetTabs');
+  if (!container) return;
+  container.innerHTML = sheets.map(s =>
+    '<div class="sheet-tab' + (s.id === activeSheetId ? ' active' : '') +
+    '" data-sheet-id="' + s.id + '" title="点击切换">' + escapeHtml(s.name) + '</div>'
+  ).join('');
+}
+
+function refreshActiveSheetGrid() {
+  const sheet = getActiveSheet();
+  buildGrid(sheet ? sheet.tableData : null);
+}
+
+function switchSheet(sheetId) {
+  if (sheetId === activeSheetId || !sheets.some(s => s.id === sheetId)) return;
+  activeSheetId = sheetId;
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  const r = revalidateBlankAndPanel('switch-sheet');
+  const active = getActiveSheet();
+  updateGuide('切换 Sheet → ' + active.name + '；工作簿' + (r.blank ? '空白' : '非空白') + ' → ' + panelStateLabel());
+}
+
+function addSheet() {
+  sheetIdCounter += 1;
+  const id = 's' + sheetIdCounter;
+  const name = 'Sheet' + sheets.length + 1;
+  sheets.push({ id, name, tableData: null, tableTypeId: null, manualContent: null });
+  activeSheetId = id;
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  const r = revalidateBlankAndPanel('add-sheet');
+  updateGuide('新建 ' + name + '；工作簿' + (r.blank ? '仍为空白' : '非空白') + ' → ' + panelStateLabel());
+}
+
+function clearActiveSheetContent() {
+  const sheet = getActiveSheet();
+  const idx = sheets.findIndex(s => s.id === sheet.id);
+  sheet.tableData = null;
+  sheet.tableTypeId = null;
+  sheet.manualContent = null;
+  sheet.name = 'Sheet' + (idx + 1);
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  const r = revalidateBlankAndPanel('clear-sheet');
+  updateGuide('已清空「' + sheet.name + '」；工作簿' + (r.blank ? '恢复空白' : '仍非空白') + ' → ' + panelStateLabel());
+}
+
+function clearEntireWorkbook() {
+  const keepCollapsed = workbookCollapsed;
+  const keepHintOnly = showHintOnlyOnBlank && !blankCardEntryFlow;
+  workbookSource = null;
+  createDefaultWorkbook();
+  workbookCollapsed = keepCollapsed;
+  showHintOnlyOnBlank = keepHintOnly;
+  revalidateBlankAndPanel('clear-workbook');
+  updateGuide('整本已恢复空白；collapsed=' + workbookCollapsed + (showHintOnlyOnBlank ? ' · 仅暗词入口' : '') + ' → ' + panelStateLabel());
+}
+
+function deleteActiveSheet() {
+  const sheet = getActiveSheet();
+  if (sheets.length === 1) {
+    clearActiveSheetContent();
+    updateGuide('仅剩一个 Sheet：已清空内容（演示删 Sheet 后变空白）');
+    return;
+  }
+  const idx = sheets.findIndex(s => s.id === sheet.id);
+  const removedName = sheet.name;
+  sheets.splice(idx, 1);
+  activeSheetId = sheets[Math.min(idx, sheets.length - 1)].id;
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  const r = revalidateBlankAndPanel('delete-sheet');
+  updateGuide('已删除「' + removedName + '」；工作簿' + (r.blank ? '恢复空白' : '仍非空白') + ' → ' + panelStateLabel());
+}
+
+function panelStateLabel() {
+  if (!workbookIsBlank) return '不展示面板';
+  if (panelDismissed) return '已全部关闭';
+  if (blankCardEntryFlow) return '完整面板（空白表格入口）';
+  if (workbookCollapsed || showHintOnlyOnBlank) return '暗词+快速建表入口';
+  return '完整面板';
+}
+
+function isBlankCardEntryFlow() {
+  return blankCardEntryFlow && workbookSource === 'blank-new';
+}
+
+function isAiFileEntryFlow() {
+  return aiFileEntryFlow && workbookSource === 'blank-new';
+}
+
+function inferFileKindFromName(name) {
+  const n = (name || '').toLowerCase();
+  if (/\.(png|jpe?g|gif|webp|bmp)$/.test(n)) return 'image';
+  if (/\.(doc|docx)$/.test(n)) return 'word';
+  if (/\.(xls|xlsx|csv)$/.test(n)) return 'excel';
+  if (/\.pdf$/.test(n)) return 'pdf';
+  if (/\.(ppt|pptx)$/.test(n)) return 'ppt';
+  return 'file';
+}
+
+function getFmEntriesForLocation(loc) {
+  if (loc === 'browse' && fmBrowseFiles.length) {
+    return fmBrowseFiles.map((f, i) => ({
+      id: 'browse-' + i,
+      type: 'file',
+      name: f.name,
+      kind: inferFileKindFromName(f.name),
+      modified: '刚刚',
+      size: f.size ? Math.round(f.size / 1024) + ' KB' : '—',
+      source: 'local',
+      file: f,
+    }));
+  }
+  const list = FM_MOCK_ENTRIES[loc] || FM_MOCK_ENTRIES.desktop;
+  return list.map(e => ({ ...e, source: e.source || (loc.indexOf('cloud') >= 0 ? 'cloud' : 'local') }));
+}
+
+/** 上传文件列表 · 统一简约线型图标 */
+const FM_ICON_SVG = {
+  folder: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5.5h5l1.2 1.8H13.5a.8.8 0 0 1 .8.8v5.4a.8.8 0 0 1-.8.8H2.8a.8.8 0 0 1-.8-.8V5.5z" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.05" stroke-linejoin="round"/></svg>',
+  image: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.2" width="11" height="9.6" rx="1" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05"/><circle cx="5.6" cy="6.8" r=".9" fill="currentColor"/><path d="M2.5 11.2 6 7.8l2.2 2 5.3-4.6" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  word: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.8h4.6l2.4 2.4v7.6H4.2V2.8z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05" stroke-linejoin="round"/><path d="M7 6.2h4.2M7 8.4h3.4M7 10.6h2.6" stroke="currentColor" stroke-width=".95" stroke-linecap="round"/></svg>',
+  excel: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.2" y="2.8" width="9.6" height="10.4" rx="1" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05"/><path d="M6.2 2.8v10.4M9.8 2.8v10.4M3.2 6.6h9.6M3.2 9.8h9.6" stroke="currentColor" stroke-width=".9"/></svg>',
+  pdf: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.8h4.6l2.4 2.4v7.6H4.2V2.8z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05" stroke-linejoin="round"/><path d="M6.4 10.2h1.1v1.4H6.4zm2.2 0c.9 0 1.4-.5 1.4-1.3v-.1c0-.8-.5-1.3-1.4-1.3H8.6v2.7zm.9-2.1c.4 0 .6.2.6.6v.1c0 .4-.2.6-.6.6H8.6V8.1z" fill="currentColor" fill-opacity=".85"/></svg>',
+  ppt: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.8h4.6l2.4 2.4v7.6H4.2V2.8z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05" stroke-linejoin="round"/><rect x="6.8" y="6.4" width="4.2" height="3" rx=".4" fill="currentColor" fill-opacity=".2" stroke="currentColor" stroke-width=".85"/></svg>',
+  file: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.2 2.8h4.6l2.4 2.4v7.6H4.2V2.8z" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05" stroke-linejoin="round"/></svg>',
+};
+
+function fmFileIconKind(entry) {
+  if (entry.type === 'folder') return 'folder';
+  return entry.kind || inferFileKindFromName(entry.name) || 'file';
+}
+
+function fmFileIcon(entry) {
+  const kind = fmFileIconKind(entry);
+  const svg = FM_ICON_SVG[kind] || FM_ICON_SVG.file;
+  return '<span class="fm-type-icon fm-type-icon--' + kind + '">' + svg + '</span>';
+}
+
+function renderInsertAttachFileList() {
+  const list = $('fmFileList');
+  if (!list) return;
+  const entries = getFmEntriesForLocation(fmCurrentLocation).filter(e => e.type === 'file' || e.type === 'folder');
+  list.innerHTML = entries.map(e => {
+    const sel = fmSelectedIds.indexOf(e.id) >= 0 ? ' selected' : '';
+    return '<div class="fm-row' + sel + '" data-id="' + escapeHtml(e.id) + '" data-type="' + e.type + '">' +
+      '<div class="fm-name"><span class="fm-icon">' + fmFileIcon(e) + '</span><span>' + escapeHtml(e.name) + '</span></div>' +
+      '<span>' + escapeHtml(e.modified || '') + '</span>' +
+      '<span>' + escapeHtml(e.size || '') + '</span></div>';
+  }).join('');
+  syncFmFooterFromSelection();
+}
+
+function syncFmFooterFromSelection() {
+  const entries = getFmEntriesForLocation(fmCurrentLocation);
+  const selected = entries.filter(e => fmSelectedIds.indexOf(e.id) >= 0 && e.type === 'file');
+  const openBtn = $('fmOpenBtn');
+  const nameInput = $('fmFilename');
+  if (openBtn) openBtn.disabled = selected.length === 0;
+  if (nameInput) {
+    nameInput.value = selected.length === 1 ? selected[0].name :
+      selected.length > 1 ? selected.map(s => s.name).join('; ') : '';
+  }
+}
+
+function openInsertAttachmentFileManager() {
+  fmCurrentLocation = 'desktop';
+  fmSelectedIds = [];
+  fmBrowseFiles = [];
+  const overlay = $('insertAttachOverlay');
+  if (!overlay) return;
+  document.querySelectorAll('#fmSidebar .fm-nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.location === 'desktop');
+  });
+  const path = $('fmPath');
+  if (path) path.innerHTML = FM_PATH_LABELS.desktop;
+  renderInsertAttachFileList();
+  overlay.classList.add('show');
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeInsertAttachmentFileManager() {
+  const overlay = $('insertAttachOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function resolveFmSelectedFiles() {
+  const entries = getFmEntriesForLocation(fmCurrentLocation);
+  return fmSelectedIds
+    .map(id => entries.find(e => e.id === id && e.type === 'file'))
+    .filter(Boolean)
+    .map(e => ({
+      name: e.name,
+      kind: e.kind || inferFileKindFromName(e.name),
+      source: e.source || 'local',
+      file: e.file || null,
+    }));
+}
+
+function ensureSidebarOpenForAiEntry() {
+  const sidebar = $('aiSidebar');
+  if (!sidebar) return;
+  if (!sidebar.classList.contains('show')) {
+    sidebar.classList.add('show');
+    sidebarOpenedForGeneration = false;
+  }
+}
+
+function cloneTableData(table) {
+  if (!table) return null;
+  return {
+    ...table,
+    headers: [...(table.headers || [])],
+    data: (table.data || []).map(row => [...row]),
+    highlights: table.highlights ? [...table.highlights] : [],
+  };
+}
+
+function normalizeAiEntryFileKind(kind, name) {
+  const k = kind || inferFileKindFromName(name);
+  if (['image', 'word', 'pdf', 'excel', 'ppt'].indexOf(k) >= 0) return k;
+  return 'unsupported';
+}
+
+function buildFileManifest(files) {
+  const normalized = (files || []).map((f, i) => ({
+    id: 'f' + i,
+    name: f.name,
+    kind: normalizeAiEntryFileKind(f.kind, f.name),
+    source: f.source || 'local',
+    file: f.file || null,
+  }));
+  const kinds = [];
+  normalized.forEach(f => {
+    if (kinds.indexOf(f.kind) < 0) kinds.push(f.kind);
+  });
+  const supported = normalized.filter(f => f.kind !== 'unsupported');
+  return {
+    files: normalized,
+    count: normalized.length,
+    kinds: kinds,
+    supportedCount: supported.length,
+    isHomogeneous: kinds.length === 1 && kinds[0] !== 'unsupported',
+    hasUnsupported: normalized.some(f => f.kind === 'unsupported'),
+    imageCount: normalized.filter(f => f.kind === 'image').length,
+    wordCount: normalized.filter(f => f.kind === 'word').length,
+  };
+}
+
+/** 文件入口固定转表指令（详见 文件入口转表-MVP方案.md） */
+const AI_FILE_ENTRY_DEFAULT_PROMPT =
+  '将上传内容转为结构清晰、内容完整、格式规范的表格';
+const EXCEL_MULTI_INFER_SUFFIX =
+  '已上传多个表格文件，请分析各文件的表头结构、字段类型与数据组织方式，判断是否为同构数据：同构则合并至同一工作表，异构则按文件拆分为独立工作表，并说明处理依据';
+
+function inferSingleFileRoute(file) {
+  if (!file) return 'EXECUTE_DEFAULT';
+  if (file.kind === 'image') return 'EXECUTE_IMAGE';
+  if (file.kind === 'excel') return 'EXECUTE_EXCEL';
+  return 'EXECUTE_DEFAULT';
+}
+
+/** 文件入口动作决策：固定指令 + 按需澄清（详见 文件入口转表-MVP方案.md） */
+function resolveFileEntryAction(files) {
+  const manifest = buildFileManifest(files);
+  const base = { manifest, prompt: AI_FILE_ENTRY_DEFAULT_PROMPT };
+
+  if (manifest.count === 0) {
+    return { ...base, action: 'REJECT', reason: 'REJECT_EMPTY' };
+  }
+  if (manifest.hasUnsupported) {
+    return { ...base, action: 'REJECT', reason: 'REJECT_UNSUPPORTED' };
+  }
+
+  const { kinds, count, isHomogeneous, imageCount, wordCount } = manifest;
+
+  if (count === 1) {
+    return { ...base, action: 'EXECUTE', route: inferSingleFileRoute(manifest.files[0]) };
+  }
+
+  if (isHomogeneous && kinds[0] === 'excel') {
+    return {
+      ...base, action: 'EXECUTE', route: 'EXECUTE_EXCEL_INFER',
+      inferSuffix: EXCEL_MULTI_INFER_SUFFIX,
+    };
+  }
+
+  if (isHomogeneous && kinds[0] === 'image' && imageCount >= 2) {
+    return { ...base, action: 'CLARIFY', clarifyType: 'CLARIFY_MULTI_IMAGE', needClarify: true };
+  }
+
+  if (isHomogeneous && kinds[0] === 'word' && wordCount >= 2) {
+    return { ...base, action: 'CLARIFY', clarifyType: 'CLARIFY_MULTI_DOC', needClarify: true };
+  }
+
+  if (kinds.length > 1) {
+    return { ...base, action: 'CLARIFY', clarifyType: 'CLARIFY_MIXED', needClarify: true };
+  }
+
+  if (count >= 2 && isHomogeneous) {
+    return {
+      ...base, action: 'CLARIFY', clarifyType: 'CLARIFY_MULTI_FILE',
+      needClarify: true, fileKind: kinds[0],
+    };
+  }
+
+  return { ...base, action: 'EXECUTE', route: 'EXECUTE_DEFAULT' };
+}
+
+function getFileDetectedSummary(file) {
+  const name = file.name || '';
+  if (MULTI_WORD_DETECTED[name]) return MULTI_WORD_DETECTED[name];
+  if (file.kind === 'image' || name === '截图') {
+    return '识别到图片中的表格结构：表头区域与数据行列';
+  }
+  if (file.kind === 'pdf') return '识别到 PDF 文档中的表格与结构化文本区域';
+  if (file.kind === 'excel') return '识别到电子表格字段：列名、数据类型与单元格区域';
+  if (file.kind === 'ppt') return '识别到演示文稿中的表格与条目化内容';
+  return '已识别文件中的表格化字段与层级结构，待确认转表策略';
+}
+
+function getPrimaryAiEntryFile(files, primaryName, route) {
+  if (!files || !files.length) return null;
+  if (primaryName) {
+    const hit = files.find(f => f.name === primaryName);
+    if (hit) return hit;
+  }
+  if (route === 'EXECUTE_EXCEL_INFER' || route === 'EXECUTE_EXCEL') {
+    const excelFiles = files.filter(f => f.kind === 'excel');
+    if (excelFiles.length) return excelFiles[0];
+  }
+  if (files.some(f => f.kind === 'image')) return files.find(f => f.kind === 'image');
+  const wordFiles = files.filter(f => f.kind === 'word');
+  if (wordFiles.length) return wordFiles[0];
+  return files[0];
+}
+
+/** 按所选文件/图片解析应对应的演示表格数据 */
+function resolveTableFromAiEntryFile(file) {
+  if (!file) return cloneTableData(PROCUREMENT_LIST_SHEET);
+  const name = (file.name || '').trim();
+  const kind = file.kind || inferFileKindFromName(name);
+
+  if (kind === 'image' || name === IMAGE_TO_TABLE_ATTACH_NAME || name === '截图' || /\.(png|jpe?g|gif|webp)$/i.test(name)) {
+    return cloneTableData(IMAGE_TO_TABLE_SHEET);
+  }
+  if (/采购清单/.test(name)) return cloneTableData(PROCUREMENT_LIST_SHEET);
+  if (/周报|项目周报/.test(name)) return cloneTableData(WEEKLY_REPORT_CLONE_SHEET);
+  if (kind === 'excel' || /\.(xls|xlsx|csv)$/i.test(name)) {
+    return cloneTableData({
+      ...PROCUREMENT_LIST_SHEET,
+      id: 'excel-import',
+      title: '采购信息管理表',
+      highlights: [
+        '已从「' + name + '」读取表格结构',
+        '已映射采购日期、供应商、商品、数量、单价等字段',
+        '总金额支持自动计算',
+      ],
+    });
+  }
+  if (kind === 'word') return cloneTableData(PROCUREMENT_LIST_SHEET);
+  return cloneTableData(PROCUREMENT_LIST_SHEET);
+}
+
+function buildAiEntryGenerationContext(files, primaryName, route) {
+  const primary = getPrimaryAiEntryFile(files, primaryName, route);
+  const tableData = resolveTableFromAiEntryFile(primary);
+  const sourceFileName = primary
+    ? (primary.kind === 'image' ? IMAGE_TO_TABLE_ATTACH_NAME : primary.name)
+    : '附件';
+  const taskLabel = tableData.title || '表格';
+  const isImage = route === 'EXECUTE_IMAGE' || route === 'EXECUTE_IMAGE_MERGE' ||
+    (primary && primary.kind === 'image');
+  return { files, primary, tableData, sourceFileName, taskLabel, isImage, route: route || null };
+}
+
+function buildAiEntryChipOrder(files, skillName) {
+  const chips = (files || []).map(f => ({
+    type: 'attach',
+    name: f.kind === 'image' ? IMAGE_TO_TABLE_ATTACH_NAME : f.name,
+    kind: f.kind,
+  }));
+  if (skillName) chips.push({ type: 'skill', name: skillName });
+  return chips;
+}
+
+function postAiEntryFilesToSidebar(files, actionResult) {
+  const chipOrder = buildAiEntryChipOrder(files);
+  const prompt = actionResult.prompt || AI_FILE_ENTRY_DEFAULT_PROMPT;
+  clearSidebarBody();
+  const body = $('sidebarBody');
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user animate-in';
+  userMsg.innerHTML = buildTemplateFlowUserMsgHtml(prompt, chipOrder);
+  body.appendChild(userMsg);
+  body.scrollTop = body.scrollHeight;
+  return { chipOrder, prompt };
+}
+
+function beginAiEntrySidebarTask() {
+  passiveClosePanel();
+  currentState = State.GENERATING;
+}
+
+function buildMultiImageClarifyOptions(files) {
+  return [
+    {
+      label: '【建议】合并全部图片为一张总表',
+      suffix: '将全部图片中的表格内容合并识别，生成一张总表',
+      route: 'EXECUTE_IMAGE_MERGE',
+      recommended: true,
+    },
+    {
+      label: '每张图片各生成一个独立工作表',
+      suffix: '为每张图片分别生成独立工作表，保留各自表格结构',
+      route: 'EXECUTE_MULTI_SHEET',
+    },
+    {
+      label: '每张图片各生成一个独立工作簿',
+      suffix: '为每张图片分别生成独立工作簿文件，彼此互不影响',
+      route: 'EXECUTE_MULTI_BOOK',
+    },
+  ];
+}
+
+function buildMultiFileClarifyOptions(files, fileKind) {
+  const kindLabel = fileKind === 'pdf' ? 'PDF' : fileKind === 'ppt' ? '演示文稿' : '文件';
+  const first = files[0] && files[0].name;
+  return [
+    {
+      label: '【建议】合并全部' + kindLabel + '为一张总表',
+      suffix: '将全部附件内容合并识别，生成一张总表',
+      route: 'EXECUTE_MERGE',
+      primaryName: first,
+      recommended: true,
+    },
+    {
+      label: '每个附件各生成一个独立工作表',
+      suffix: '为每个附件分别生成独立工作表，保留各自原始结构',
+      route: 'EXECUTE_MULTI_SHEET',
+      primaryName: first,
+    },
+    {
+      label: '每个附件各生成一个独立工作簿',
+      suffix: '为每个附件分别生成独立工作簿文件，彼此互不影响',
+      route: 'EXECUTE_MULTI_BOOK',
+      primaryName: first,
+    },
+  ];
+}
+
+function buildMultiDocClarifyOptions(files) {
+  const wordFiles = files.filter(f => f.kind === 'word');
+  return [
+    {
+      label: '【建议】以「' + wordFiles[0].name + '」结构为主生成一张总表',
+      suffix: '以主文档「' + wordFiles[0].name + '」的列结构生成一张总表，并将其余文档按相同列映射合并行',
+      route: 'EXECUTE_DOC',
+      primaryName: wordFiles[0].name,
+      recommended: true,
+    },
+    {
+      label: '合并全部 Word 为一个工作表（统一列后追加行）',
+      suffix: '合并全部 Word 文档为一个工作表，统一列名后按文档分块追加数据行',
+      route: 'EXECUTE_DOC',
+      primaryName: wordFiles[0].name,
+    },
+    {
+      label: '每个 Word 各生成一个独立工作表',
+      suffix: '为每个 Word 文档分别生成独立工作表，保留各自原始结构',
+      route: 'EXECUTE_MULTI_SHEET',
+      primaryName: wordFiles[0].name,
+    },
+  ];
+}
+
+function buildMixedClarifyOptions(files) {
+  const word = files.find(f => f.kind === 'word');
+  const image = files.find(f => f.kind === 'image');
+  const pdf = files.find(f => f.kind === 'pdf');
+  const excel = files.find(f => f.kind === 'excel');
+  const ppt = files.find(f => f.kind === 'ppt');
+  const options = [];
+
+  if (word) {
+    options.push({
+      label: '【建议】以「' + word.name + '」为主生成表格',
+      suffix: '以文档「' + word.name + '」的列结构为主生成一张总表',
+      route: 'EXECUTE_DOC',
+      primaryName: word.name,
+      recommended: true,
+    });
+  }
+  if (image) {
+    const display = image.name === '截图' ? IMAGE_TO_TABLE_ATTACH_NAME : image.name;
+    options.push({
+      label: '仅转换图片「' + display + '」为表格',
+      suffix: '仅处理图片并提取表格结构生成工作表',
+      route: 'EXECUTE_IMAGE',
+      primaryName: image.name,
+      recommended: !word,
+    });
+  }
+  if (pdf) {
+    options.push({
+      label: '以 PDF「' + pdf.name + '」为主生成表格',
+      suffix: '提取 PDF 中的表格与结构化文本并生成工作表',
+      route: 'EXECUTE_PDF',
+      primaryName: pdf.name,
+      recommended: !word && !image,
+    });
+  }
+  if (excel) {
+    options.push({
+      label: '导入并规范化「' + excel.name + '」',
+      suffix: '读取电子表格并规范化列结构与数据类型',
+      route: 'EXECUTE_EXCEL',
+      primaryName: excel.name,
+      recommended: !word && !image && !pdf,
+    });
+  }
+  if (ppt) {
+    options.push({
+      label: '以演示文稿「' + ppt.name + '」为主生成表格',
+      suffix: '提取演示文稿中的表格与结构化内容并生成工作表',
+      route: 'EXECUTE_PPT',
+      primaryName: ppt.name,
+      recommended: options.length === 0,
+    });
+  }
+  if (!options.some(o => o.recommended) && options.length) options[0].recommended = true;
+  if (files.length > 1) {
+    options.push({
+      label: '分别为每个文件生成独立工作表',
+      suffix: '为每个附件分别生成独立工作表，保留各自原始结构',
+      route: 'EXECUTE_MULTI_SHEET',
+      primaryName: (word || image || pdf || excel || ppt || files[0]).name,
+    });
+    options.push({
+      label: '分别为每个文件生成独立工作簿',
+      suffix: '为每个附件分别生成独立工作簿文件，彼此互不影响',
+      route: 'EXECUTE_MULTI_BOOK',
+      primaryName: (word || image || pdf || excel || ppt || files[0]).name,
+    });
+  }
+  return options;
+}
+
+function getClarifyCardMeta(clarifyType, files, fileKind) {
+  switch (clarifyType) {
+    case 'CLARIFY_MULTI_IMAGE':
+      return {
+        title: '图片转表方式',
+        subtitle: '已选择 ' + files.length + ' 张图片，请确认如何处理：',
+        detectedFiles: files,
+        options: buildMultiImageClarifyOptions(files),
+      };
+    case 'CLARIFY_MULTI_DOC':
+      return {
+        title: 'Word 转表方式',
+        subtitle: '已识别以下 ' + files.filter(f => f.kind === 'word').length + ' 个文档的内容特征：',
+        detectedFiles: files.filter(f => f.kind === 'word'),
+        options: buildMultiDocClarifyOptions(files),
+      };
+    case 'CLARIFY_MIXED':
+      return {
+        title: '转表方式',
+        subtitle: '检测到多种文件格式，已识别各文件内容特征：',
+        detectedFiles: files,
+        options: buildMixedClarifyOptions(files),
+      };
+    case 'CLARIFY_MULTI_FILE':
+      return {
+        title: '多文件处理方式',
+        subtitle: '已选择多个同类型文件，请确认合并或拆分策略：',
+        detectedFiles: files,
+        options: buildMultiFileClarifyOptions(files, fileKind || (files[0] && files[0].kind)),
+      };
+    default:
+      return {
+        title: '转表方式',
+        subtitle: '请确认处理方式：',
+        detectedFiles: files,
+        options: buildMixedClarifyOptions(files),
+      };
+  }
+}
+
+function showAiEntryClarification(actionResult, files, chipOrder, userPrompt) {
+  const clarifyType = actionResult.clarifyType;
+  const meta = getClarifyCardMeta(clarifyType, files, actionResult.fileKind);
+  const detectedHtml = meta.detectedFiles.map(f =>
+    '<div class="cc-detected-item"><strong>' + escapeHtml(f.kind === 'image' && f.name === '截图' ? IMAGE_TO_TABLE_ATTACH_NAME : f.name) + '</strong><span>' +
+    escapeHtml(getFileDetectedSummary(f)) + '</span></div>'
+  ).join('');
+
+  const options = meta.options;
+  const optionsHtml = options.map((opt, i) => {
+    const rec = opt.recommended ? '<span class="cc-rec-tag">建议</span>' : '';
+    const cls = opt.recommended ? ' cc-option--recommended' : '';
+    return '<div class="cc-option' + cls + '" data-idx="' + i + '"><div class="radio"></div>' +
+      escapeHtml(opt.label) + rec + '</div>';
+  }).join('');
+
+  const clarifyMsg = document.createElement('div');
+  clarifyMsg.className = 'chat-msg ai animate-in';
+  clarifyMsg.innerHTML = '<div class="msg-content">' +
+    '<div class="clarify-card">' +
+    '<div class="cc-title">📋 请选择' + escapeHtml(meta.title) + '</div>' +
+    '<div class="cc-subtitle">' + escapeHtml(meta.subtitle) + '</div>' +
+    '<div class="cc-detected">' + detectedHtml + '</div>' +
+    optionsHtml +
+    '<button class="cc-confirm" type="button" disabled>确认并开始转换</button>' +
+    '</div></div>';
+  const body = $('sidebarBody');
+  body.appendChild(clarifyMsg);
+  body.scrollTop = body.scrollHeight;
+
+  let selectedIdx = null;
+  clarifyMsg.querySelectorAll('.cc-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      clarifyMsg.querySelectorAll('.cc-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      selectedIdx = parseInt(opt.dataset.idx, 10);
+      clarifyMsg.querySelector('.cc-confirm').disabled = false;
+    });
+  });
+
+  const confirmBtn = clarifyMsg.querySelector('.cc-confirm');
+  confirmBtn.addEventListener('click', () => {
+    if (selectedIdx == null || !options[selectedIdx]) return;
+    const chosen = options[selectedIdx];
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '转换中...';
+    const merged = userPrompt + '。' + chosen.suffix;
+    setTimeout(() => {
+      runAiEntryConvertTask(files, chipOrder, merged, {
+        route: chosen.route,
+        primaryName: chosen.primaryName,
+      });
+    }, 400);
+  });
+}
+
+function runAiEntryConvertTask(files, chipOrder, userPrompt, execOptions) {
+  const route = execOptions && execOptions.route;
+  const primaryName = execOptions && execOptions.primaryName;
+  currentAiEntryGenContext = buildAiEntryGenerationContext(files, primaryName, route);
+  beginAiEntrySidebarTask();
+  const ctx = currentAiEntryGenContext;
+  const opts = { skipSidebarInit: true, aiEntryContext: ctx };
+  const effectiveRoute = route || (ctx.isImage ? 'EXECUTE_IMAGE' : 'EXECUTE_DOC');
+
+  const isImageRoute = effectiveRoute === 'EXECUTE_IMAGE' ||
+    effectiveRoute === 'EXECUTE_IMAGE_MERGE' ||
+    (ctx.isImage && effectiveRoute !== 'EXECUTE_EXCEL_INFER');
+  if (isImageRoute) {
+    startImageToTableGeneration(userPrompt || AI_FILE_ENTRY_DEFAULT_PROMPT, chipOrder, opts);
+    return;
+  }
+  startTemplateCloneGeneration(userPrompt || AI_FILE_ENTRY_DEFAULT_PROMPT, chipOrder, opts);
+}
+
+function getFileEntryClarifyGuide(clarifyType, fileCount) {
+  switch (clarifyType) {
+    case 'CLARIFY_MULTI_IMAGE': return '已发送 ' + fileCount + ' 张图片到侧边栏 → 请选择图片转表方式';
+    case 'CLARIFY_MULTI_DOC': return '已发送 ' + fileCount + ' 个 Word 到侧边栏 → 请选择文档合并方式';
+    case 'CLARIFY_MIXED': return '已发送附件到侧边栏 → 检测到多种格式，请选择转表方式';
+    case 'CLARIFY_MULTI_FILE': return '已发送 ' + fileCount + ' 个同类型文件 → 请选择合并或拆分方式';
+    default: return '已发送附件到侧边栏 → 请确认转表方式';
+  }
+}
+
+function handleAiEntryFilesOpened(files) {
+  if (!files || !files.length) return;
+  if (!isAiFileEntryFlow()) return;
+  closeInsertAttachmentFileManager();
+  ensureSidebarOpenForAiEntry();
+
+  const actionResult = resolveFileEntryAction(files);
+
+  if (actionResult.action === 'REJECT') {
+    if (actionResult.reason === 'REJECT_EMPTY') updateGuide('未选择文件');
+    else updateGuide('包含不支持的文件格式，请改选图片、Word、PDF、Excel 或 PPT');
+    return;
+  }
+
+  const { chipOrder, prompt } = postAiEntryFilesToSidebar(files, actionResult);
+
+  if (actionResult.action === 'CLARIFY' || actionResult.needClarify) {
+    setTimeout(() => showAiEntryClarification(actionResult, files, chipOrder, prompt), 500);
+    updateGuide(getFileEntryClarifyGuide(actionResult.clarifyType, files.length));
+    return;
+  }
+
+  let finalPrompt = prompt;
+  if (actionResult.inferSuffix) finalPrompt = prompt + '。' + actionResult.inferSuffix;
+
+  const guide = actionResult.route === 'EXECUTE_EXCEL_INFER'
+    ? '已发送多个表格文件 → 模型将判断同构/异构并自动合并或拆分'
+    : '已发送附件到侧边栏 → 正在执行转表';
+  updateGuide(guide);
+  setTimeout(() => runAiEntryConvertTask(files, chipOrder, finalPrompt, { route: actionResult.route }), 500);
+}
+
+function bindInsertAttachmentFileManager() {
+  const overlay = $('insertAttachOverlay');
+  if (!overlay) return;
+
+  $('fmCloseBtn').addEventListener('click', closeInsertAttachmentFileManager);
+  $('fmCancelBtn').addEventListener('click', () => {
+    closeInsertAttachmentFileManager();
+    updateGuide('已取消选择文件');
+  });
+
+  $('fmOpenBtn').addEventListener('click', () => {
+    const files = resolveFmSelectedFiles();
+    if (!files.length) return;
+    handleAiEntryFilesOpened(files);
+  });
+
+  $('fmSidebar').addEventListener('click', (e) => {
+    const item = e.target.closest('.fm-nav-item');
+    if (!item || !item.dataset.location) return;
+    const loc = item.dataset.location;
+    if (loc === 'browse') {
+      const input = $('fmBrowseInput');
+      if (input) { input.value = ''; input.click(); }
+      return;
+    }
+    fmCurrentLocation = loc;
+    fmSelectedIds = [];
+    document.querySelectorAll('#fmSidebar .fm-nav-item').forEach(el => {
+      el.classList.toggle('active', el === item);
+    });
+    const path = $('fmPath');
+    if (path) path.innerHTML = FM_PATH_LABELS[loc] || FM_PATH_LABELS.desktop;
+    renderInsertAttachFileList();
+  });
+
+  $('fmFileList').addEventListener('click', (e) => {
+    const row = e.target.closest('.fm-row');
+    if (!row) return;
+    const id = row.dataset.id;
+    const type = row.dataset.type;
+    if (type === 'folder') {
+      updateGuide('演示中文件夹「' + row.querySelector('.fm-name span:last-child').textContent + '」暂无更多内容');
+      return;
+    }
+    if (e.ctrlKey || e.metaKey) {
+      const idx = fmSelectedIds.indexOf(id);
+      if (idx >= 0) fmSelectedIds.splice(idx, 1);
+      else fmSelectedIds.push(id);
+    } else {
+      fmSelectedIds = [id];
+    }
+    renderInsertAttachFileList();
+  });
+
+  $('fmFileList').addEventListener('dblclick', (e) => {
+    const row = e.target.closest('.fm-row[data-type="file"]');
+    if (!row) return;
+    fmSelectedIds = [row.dataset.id];
+    renderInsertAttachFileList();
+    handleAiEntryFilesOpened(resolveFmSelectedFiles());
+  });
+
+  $('fmBrowseInput').addEventListener('change', (e) => {
+    if (!e.target.files || !e.target.files.length) return;
+    fmBrowseFiles = Array.from(e.target.files);
+    fmCurrentLocation = 'browse';
+    fmSelectedIds = fmBrowseFiles.map((_, i) => 'browse-' + i);
+    document.querySelectorAll('#fmSidebar .fm-nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.location === 'browse');
+    });
+    const path = $('fmPath');
+    if (path) path.textContent = '本地浏览';
+    renderInsertAttachFileList();
+    handleAiEntryFilesOpened(resolveFmSelectedFiles());
+  });
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeInsertAttachmentFileManager();
+  });
+}
+
+function enterSpreadsheet(entryKind) {
+  $('newPage').style.display = 'none';
+  $('spreadsheetPage').style.display = 'flex';
+  workbookSource = 'blank-new';
+  createDefaultWorkbook();
+  workbookCollapsed = false;
+  panelDismissed = false;
+  blankCardEntryFlow = entryKind === 'blank-card';
+  aiFileEntryFlow = entryKind === 'ai-file-entry';
+  blankCardPanelSuppressed = entryKind === 'ai-file-entry';
+  if (entryKind === 'ai-file-entry') panelDismissed = true;
+  else panelDismissed = false;
+  showHintOnlyOnBlank = false;
+  revalidateBlankAndPanel('open-workbook');
+}
+
+/** 是否允许唤起底部建表面板（空白 或 已打开销售表场景） */
+function canOpenBuildPanel() {
+  return workbookIsBlank || workbookSource === 'opened-sales';
+}
+
+// =============== 表格数据 ===============
+const COLS = 'ABCDEFGHIJKLMNOPQRSTUVWX'.split('');
+const ROWS = 56;
+
+/** 分镜：打开已有销售表（Sheet1） */
+const OPENED_SALES_SHEET = {
+  id: 'opened-sales',
+  title: '销售数据',
+  headers: ['日期', '客户名称', '销售人员', '订单金额', '回款状态', '备注'],
+  data: [
+    ['2026/05/02', '甲公司', '张三', '120,000.00', '已回款', ''],
+    ['2026/05/05', '乙公司', '李四', '85,000.00', '已回款', ''],
+    ['2026/05/08', '丙公司', '王五', '56,000.00', '未回款', '跟进中'],
+    ['2026/05/10', '丁公司', '张三', '98,000.00', '已回款', ''],
+    ['2026/05/12', '戊公司', '赵六', '42,000.00', '已回款', ''],
+    ['2026/05/15', '己公司', '钱七', '76,000.00', '已回款', ''],
+    ['2026/05/18', '庚公司', '李四', '63,000.00', '未回款', ''],
+    ['2026/05/20', '辛公司', '王五', '110,000.00', '已回款', ''],
+    ['2026/05/22', '壬公司', '张三', '67,000.00', '已回款', ''],
+    ['2026/05/25', '癸公司', '孙八', '45,000.00', '部分回款', ''],
+  ],
+};
+
+/** 分镜：按已回款汇总后的业绩表（Sheet2） */
+const PERFORMANCE_SUMMARY_SHEET = {
+  id: 'performance-summary',
+  title: '业绩统计表',
+  headers: ['销售人员', '订单数量', '总回款金额', '排名'],
+  data: [
+    ['张三', '3', '285,000.00', '1'],
+    ['王五', '1', '110,000.00', '2'],
+    ['李四', '1', '85,000.00', '3'],
+    ['钱七', '1', '76,000.00', '4'],
+    ['赵六', '1', '42,000.00', '5'],
+  ],
+};
+
+const SALES_AGGREGATION_PROMPT =
+  '从当前销售表中提取所有已回款的订单，按销售人员汇总总业绩，生成新的业绩统计表';
+
+/** 功能区「快速建表」→ 侧边栏预填提示词 */
+const QUICK_BUILD_SIDEBAR_PROMPT =
+  '帮我创建一个采购信息管理表格，包含：「采购日期、供应商名称、商品名称、规格型号、采购数量、单价、总金额」。支持快速录入附件内容并自动计算总金额，方便统计和分析采购成本。';
+
+/** 分镜：参考上传周报 → 生成同款 2026年6月项目周报 */
+const TEMPLATE_CLONE_PROMPT =
+  '参考上传的文件，生成同款表格';
+
+/** 分镜：上传表格截图 → 图转表识别结果 */
+const IMAGE_TO_TABLE_PROMPT =
+  '完整提取图片中的内容，转为结构清晰、内容完整、行列对齐、格式规范的表格';
+const IMAGE_TO_TABLE_ATTACH_NAME = '截图';
+
+/** Word 等文档转表：侧边栏默认任务描述（通用转表标准） */
+const WORD_TO_TABLE_PROMPT =
+  '将文档转为结构清晰、内容完整、格式规范的表格';
+
+const PDF_TO_TABLE_PROMPT =
+  '提取 PDF 中的表格与结构化文本，转为结构清晰、内容完整、格式规范的表格';
+const EXCEL_IMPORT_PROMPT =
+  '读取并规范化表格结构，保留字段含义与数据类型';
+const PPT_TO_TABLE_PROMPT =
+  '提取演示文稿中的表格与结构化内容，转为规范表格';
+const IMAGE_TO_TABLE_SHEET = {
+  id: 'image-to-table',
+  title: '设备巡检记录表',
+  headers: ['设备编号', '设备名称', '巡检结果', '巡检人', '巡检日期'],
+  data: [
+    ['EQ-001', '空压机 A1', '正常', '王工', '2026/06/01'],
+    ['EQ-002', '冷却塔 B2', '正常', '李工', '2026/06/01'],
+    ['EQ-003', '配电柜 C3', '待复检', '张工', '2026/06/02'],
+    ['EQ-004', '传送带 D4', '异常', '赵工', '2026/06/02'],
+    ['EQ-005', '锅炉 E5', '正常', '钱工', '2026/06/03'],
+  ],
+  highlights: [
+    '已识别图片中的表头与数据区域',
+    '共提取 5 行 × 5 列单元格内容',
+    '异常项已标红，表头与边框样式已还原',
+  ],
+};
+
+/** 分镜：采购清单.docx → 转表结果 */
+const PROCUREMENT_LIST_SHEET = {
+  id: 'procurement-list',
+  title: '采购清单',
+  headers: ['采购日期', '供应商名称', '商品名称', '规格型号', '采购数量', '单价', '总金额', '申请人', '审批状态', '备注'],
+  data: [
+    ['2026/06/01', '华东办公用品', '硒鼓', 'HP 88A', '10', '280.00', '2,800.00', '张三', '已审批', ''],
+    ['2026/06/02', '迅捷线缆', '网线', '超五类 305m', '5', '420.00', '2,100.00', '李四', '已审批', ''],
+    ['2026/06/03', '鼎盛数码', '显示器', '27寸 2K', '3', '1,299.00', '3,897.00', '王五', '待审批', '加急采购'],
+    ['2026/06/04', '联创文具', 'A4复印纸', '70g 500张/包', '20', '28.00', '560.00', '赵六', '已审批', ''],
+    ['合计', '', '', '', '', '', '9,357.00', '', '', ''],
+  ],
+  highlights: [
+    '已从「采购清单.docx」识别采购清单表头与条目结构',
+    '已提取物料、规格、数量、单价、金额等字段',
+    '总金额已自动计算，并生成合计行',
+  ],
+};
+
+const WEEKLY_REPORT_CLONE_SHEET = {
+  id: 'weekly-report-clone',
+  title: '2026年6月项目周报',
+  headers: ['项目名称', '负责人', '进度', '本周完成', '下周计划', '风险点'],
+  data: [
+    ['AI建表能力优化', '张三', '75%', '完成空白页入口与面板状态规则', '联调模板生成与多 Sheet 演示', '接口字段待产品确认'],
+    ['销售数据看板', '李四', '60%', '完成数据源对接方案评审', '输出第一版看板原型', '部分指标口径未统一'],
+    ['考勤自动化', '王五', '90%', '规则引擎配置上线', '接入异常提醒通知', '—'],
+    ['供应商台账', '赵六', '45%', '梳理字段与权限模型', '导入历史数据试跑', '主数据清洗工作量大'],
+    ['项目周报模板', '钱七', '100%', '模板结构定稿并评审通过', '推广至各项目组使用', '—'],
+  ],
+};
+
+const EXAMPLE_PROMPTS = {
+  '帮我记日常收支流水': '帮我做一个2026年6月的日常收支流水表，包含日期、摘要、收入、支出、余额字段，自动计算每日余额和月度合计，设置货币格式',
+  '帮我统计员工考勤': '帮我统计2026年6月的员工考勤，包含姓名、应出勤天数、实际出勤、请假天数、加班天数、出勤率、备注字段，自动计算出勤率',
+  '帮我统计销售业绩': '帮我统计2026年6月的销售业绩，包含客户名称、联系人、销售额、回款额、未回款、备注字段，自动计算回款率'
+};
+
+const GENERATED_TABLES = {
+  income: {
+    id: 'income',
+    title: '日常收支流水表',
+    headers: ['日期', '摘要', '分类', '收入', '支出', '余额', '备注'],
+    data: [
+      ['2026/06/01', '工资入账', '收入', '8,500.00', '', '8,500.00', ''],
+      ['2026/06/02', '午餐', '餐饮', '', '35.00', '8,465.00', ''],
+      ['2026/06/03', '打车报销', '交通', '', '28.00', '8,437.00', ''],
+      ['2026/06/04', '兼职收入', '收入', '1,200.00', '', '9,637.00', ''],
+      ['月度合计', '', '', '9,700.00', '63.00', '9,637.00', ''],
+    ],
+    highlights: ['智能搭建日期、摘要、分类、收入、支出、余额等字段', '自动计算每日余额与月度合计', '金额已设置货币格式，支出标红', '已开启筛选并冻结表头行'],
+  },
+  attendance: {
+    id: 'attendance',
+    title: '员工考勤统计表',
+    headers: ['姓名', '部门', '应出勤', '实际出勤', '请假', '迟到', '加班', '出勤率', '备注'],
+    data: [
+      ['张三', '研发部', '22', '21', '1', '0', '3', '95.5%', ''],
+      ['李四', '市场部', '22', '22', '0', '1', '5', '100%', ''],
+      ['王五', '运营部', '22', '20', '2', '2', '1', '90.9%', '事假2天'],
+      ['赵六', '财务部', '22', '18', '4', '0', '0', '81.8%', ''],
+      ['月度汇总', '', '88', '81', '7', '3', '9', '92.0%', ''],
+    ],
+    highlights: ['已按部门统计应出勤与实际出勤', '出勤率自动计算并设为百分比格式', '生成月度汇总行', '已开启筛选并冻结表头行'],
+  },
+  sales: {
+    id: 'sales',
+    title: '销售业绩统计表',
+    headers: ['销售人员', '客户', '订单金额', '回款', '未回款', '回款率', '备注'],
+    data: [
+      ['张三', '甲公司', '120,000.00', '100,000.00', '20,000.00', '83.3%', ''],
+      ['李四', '乙公司', '85,000.00', '85,000.00', '0.00', '100%', '已结清'],
+      ['王五', '丙公司', '56,000.00', '30,000.00', '26,000.00', '53.6%', '跟进中'],
+      ['赵六', '丁公司', '42,000.00', '20,000.00', '22,000.00', '47.6%', ''],
+      ['汇总', '', '303,000.00', '235,000.00', '68,000.00', '77.6%', ''],
+    ],
+    highlights: ['已搭建销售、客户、回款相关字段', '自动计算回款率与总业绩', '金额使用货币格式', '已生成汇总行'],
+  },
+  salary: {
+    id: 'salary',
+    title: '员工工资核算表',
+    headers: ['姓名', '部门', '基本工资', '绩效', '五险一金', '个税', '实发工资', '备注'],
+    data: [
+      ['张三', '研发部', '12,000.00', '3,500.00', '1,850.00', '680.00', '12,970.00', ''],
+      ['李四', '市场部', '10,000.00', '2,800.00', '1,520.00', '420.00', '10,860.00', ''],
+      ['王五', '运营部', '9,500.00', '2,200.00', '1,410.00', '350.00', '9,940.00', ''],
+      ['赵六', '财务部', '11,000.00', '3,000.00', '1,680.00', '550.00', '11,770.00', ''],
+      ['月度合计', '', '42,500.00', '11,500.00', '6,460.00', '2,000.00', '45,540.00', ''],
+    ],
+    highlights: ['已配置工资、绩效、五险一金、个税字段', '自动计算实发工资', '金额使用货币格式', '已生成月度合计行'],
+  },
+  inventory: {
+    id: 'inventory',
+    title: '仓库库存出入台账',
+    headers: ['编号', '物资', '规格', '单位', '入库', '出库', '当前库存', '备注'],
+    data: [
+      ['001', 'A4打印纸', '70g/500张', '箱', '50', '12', '38', ''],
+      ['002', '签字笔', '0.5mm黑', '盒', '30', '25', '5', '低于预警'],
+      ['003', '文件夹', 'A4双夹', '个', '100', '40', '60', ''],
+      ['004', '订书机', '标准型', '个', '20', '8', '12', ''],
+    ],
+    highlights: ['已建立出入库与实时库存字段', '自动计算当前库存', '库存低于预警值已标红', '已开启筛选功能'],
+  },
+  project: {
+    id: 'project',
+    title: '项目进度跟踪表',
+    headers: ['任务', '负责人', '开始时间', '结束时间', '进度', '剩余天数', '备注'],
+    data: [
+      ['官网改版', '张三', '2026/06/01', '2026/06/30', '80%', '5', ''],
+      ['APP测试', '李四', '2026/06/05', '2026/06/25', '60%', '10', '需增测试人员'],
+      ['数据迁移', '王五', '2026/06/10', '2026/07/10', '30%', '25', ''],
+      ['需求评审', '赵六', '2026/06/01', '2026/06/08', '100%', '0', '已完成'],
+    ],
+    highlights: ['已搭建任务、负责人、进度等字段', '自动计算剩余天数', '进度列已配置百分比格式', '已用进度条展示完成率'],
+  },
+  procurement: {
+    id: 'procurement',
+    title: '采购物资申请单',
+    headers: ['物料', '规格', '单位', '数量', '单价', '金额', '申请人', '审批人', '备注'],
+    data: [
+      ['硒鼓', 'HP 88A', '个', '10', '280.00', '2,800.00', '张三', '李经理', ''],
+      ['网线', '超五类', '箱', '5', '420.00', '2,100.00', '张三', '李经理', ''],
+      ['显示器', '27寸2K', '台', '3', '1,299.00', '3,897.00', '王五', '李经理', ''],
+      ['合计', '', '', '', '', '8,797.00', '', '', ''],
+    ],
+    highlights: ['已配置物料、数量、单价、金额字段', '自动计算总金额', '金额使用货币格式', '已生成合计行'],
+  },
+  supplier: {
+    id: 'supplier',
+    title: '供应商信息台账',
+    headers: ['名称', '联系人', '电话', '地址', '主营产品', '合作状态', '备注'],
+    data: [
+      ['华联办公', '刘经理', '138****1001', '北京市朝阳区', '办公用品', '合作中', ''],
+      ['鑫达科技', '陈总', '139****2002', '上海市浦东新区', 'IT设备', '合作中', ''],
+      ['恒通纸业', '王女士', '137****3003', '广州市天河区', '纸品耗材', '暂停', '价格谈判'],
+      ['德盛物流', '赵先生', '136****4004', '深圳市南山区', '物流配送', '合作中', ''],
+    ],
+    highlights: ['已建立供应商基础信息字段', '列宽已按内容自适应', '合作状态支持筛选', '已冻结表头行'],
+  },
+  contract: {
+    id: 'contract',
+    title: '合同草案',
+    headers: ['条款', '内容', '责任方', '备注'],
+    data: [
+      ['合同标的', '软件服务年度维护', '甲方', ''],
+      ['付款方式', '分两期支付，验收后付尾款', '乙方', ''],
+      ['交付期限', '签约后30个工作日内', '乙方', ''],
+      ['违约责任', '逾期按日0.05%计违约金', '双方', ''],
+    ],
+    highlights: ['已生成合同核心条款结构', '支持继续补充条款字段', '可导出为正式合同文档', '建议法务复核后签署'],
+  },
+};
+
+// =============== 需求澄清机制 ===============
+/** 可确定基础表结构 → 不澄清（非核心信息用默认值） */
+const CLARIFY_KNOWN_STRUCTURE = [
+  /工资|薪酬|核算/,
+  /考勤/,
+  /销售|业绩|回款/,
+  /库存|仓库|出入/,
+  /采购/,
+  /供应商/,
+  /收支|流水/,
+  /进度跟踪|进度表|项目进度/,
+  /合同/,
+  /任务.*负责人|负责人.*起止/,
+  /标准收支|员工考勤|销售业绩/,
+];
+
+/** 核心业务实体不明确 → 需澄清 */
+const CLARIFICATION_SCENARIOS = {
+  project: {
+    title: '我需要确认一下',
+    subtitle: '「项目管理」可能对应不同表结构，请选择你的项目类型：',
+    options: [
+      { label: '软件研发项目', suffix: '按软件研发项目生成项目进度跟踪表，包含任务、负责人、起止时间、进度、剩余天数' },
+      { label: '市场活动项目', suffix: '按市场活动项目生成项目进度跟踪表，包含活动名称、负责人、档期、进度、预算执行情况' },
+      { label: '工程施工项目', suffix: '按工程施工项目生成项目进度跟踪表，包含分项工程、负责人、计划与实际工期、完成率' },
+      { label: '采购项目', suffix: '按采购项目生成项目进度跟踪表，包含采购项、负责人、节点、进度、合同金额' },
+    ],
+  },
+  register: {
+    title: '我需要确认一下',
+    subtitle: '「登记表」可能用于不同对象，请选择登记类型：',
+    options: [
+      { label: '人员登记', suffix: '生成人员信息登记表，包含姓名、部门、岗位、入职日期、联系方式、备注' },
+      { label: '物品登记', suffix: '生成物品领用登记表，包含物品名称、规格、单位、数量、领用人、领用日期、备注' },
+      { label: '会议登记', suffix: '生成会议签到登记表，包含会议主题、时间、地点、参会人、签到时间、备注' },
+    ],
+  },
+  statistics: {
+    title: '我需要确认一下',
+    subtitle: '「通用统计」需要明确统计对象，请选择：',
+    options: [
+      { label: '销售数据统计', suffix: '生成销售业绩统计表，包含销售人员、客户、订单金额、回款、未回款、回款率，默认当前月份' },
+      { label: '财务收支统计', suffix: '生成日常收支流水表，包含日期、摘要、分类、收入、支出、余额，默认当年' },
+      { label: '运营指标统计', suffix: '生成运营指标统计表，包含指标名称、目标值、实际值、达成率、环比、备注' },
+    ],
+  },
+  track: {
+    title: '我需要确认一下',
+    subtitle: '「跟踪表」需要明确跟踪对象，请选择：',
+    options: [
+      { label: '项目执行跟踪', suffix: '生成项目进度跟踪表，包含任务、负责人、起止时间、进度、剩余天数' },
+      { label: '任务进度跟踪', suffix: '生成任务进度跟踪表，包含任务、负责人、开始时间、结束时间、进度、剩余天数' },
+      { label: '订单履约跟踪', suffix: '生成订单履约跟踪表，包含订单号、客户、交付日期、履约状态、负责人、备注' },
+    ],
+  },
+  plan: {
+    title: '我需要确认一下',
+    subtitle: '「计划表」需要明确计划类型，请选择：',
+    options: [
+      { label: '工作计划', suffix: '生成工作计划表，包含任务、负责人、计划时间、优先级、完成状态、备注' },
+      { label: '生产计划', suffix: '生成生产计划表，包含产品、计划产量、实际产量、产线、计划日期、完成率' },
+      { label: '营销计划', suffix: '生成营销计划表，包含活动、渠道、预算、负责人、起止时间、目标与完成情况' },
+    ],
+  },
+};
+
+function detectClarificationScenario(input) {
+  const t = (input || '').trim();
+  if (!t) return null;
+
+  if (CLARIFY_KNOWN_STRUCTURE.some(re => re.test(t))) return null;
+
+  if (/项目管理表/.test(t) || (/项目管理/.test(t) && !/进度|跟踪|研发|市场|工程|采购|软件|活动/.test(t))) {
+    return CLARIFICATION_SCENARIOS.project;
+  }
+  if (/通用统计|统计表(?!.*(销售|业绩|考勤|员工|财务|运营))/.test(t) && !/销售|业绩|考勤|收支|流水/.test(t)) {
+    return CLARIFICATION_SCENARIOS.statistics;
+  }
+  if (/通用登记|登记表/.test(t) && !/考勤|物资|会议|人员信息|供应商|资产|签到/.test(t)) {
+    return CLARIFICATION_SCENARIOS.register;
+  }
+  if (/通用跟踪|通用跟踪表/.test(t)) return CLARIFICATION_SCENARIOS.track;
+  if (/通用计划|通用计划表/.test(t)) return CLARIFICATION_SCENARIOS.plan;
+
+  return null;
+}
+
+/** 按指令关键词匹配应生成的表格（顺序：更具体的规则靠前） */
+const PROMPT_TABLE_RULES = [
+  { key: 'income', test: t => /收支|流水|标准收支/.test(t) },
+  { key: 'attendance', test: t => /考勤/.test(t) },
+  { key: 'sales', test: t => /销售|业绩|回款/.test(t) },
+  { key: 'salary', test: t => /工资|薪酬|核算表/.test(t) && !/考勤/.test(t) },
+  { key: 'inventory', test: t => /库存|仓库|出入/.test(t) },
+  { key: 'procurement', test: t => /采购/.test(t) },
+  { key: 'supplier', test: t => /供应商/.test(t) },
+  { key: 'contract', test: t => /合同/.test(t) },
+  { key: 'project', test: t => /项目|进度跟踪|进度表/.test(t) },
+];
+
+function resolveTableFromPrompt(userInput) {
+  const text = userInput || '';
+  for (const rule of PROMPT_TABLE_RULES) {
+    if (rule.test(text)) return GENERATED_TABLES[rule.key];
+  }
+  return GENERATED_TABLES.income;
+}
+
+function getGeneratedCellStyle(header, cell, row, tableData) {
+  let style = '';
+  const isSummary = /合计|汇总|月度/.test(String(row[0] || ''));
+  if (isSummary) style += 'background:#f5f5f5;font-weight:600;';
+  if (header === '出勤率' || header === '回款率' || header === '进度') style += 'color:#2e7d32;font-weight:500;';
+  if (header === '支出' && cell) style += 'color:#e53935;';
+  if (header === '收入' && cell) style += 'color:#1b7f4a;';
+  if (header === '当前库存' && cell && parseInt(cell, 10) < 10) style += 'color:#e53935;font-weight:500;';
+  if (header === '备注' && cell === '低于预警') style += 'color:#e53935;';
+  if (tableData.id === 'attendance' && isSummary) style += 'background:#f0f7ff;font-weight:600;';
+  if (tableData.id === 'weekly-report-clone') {
+    style += 'border:1px solid #e0e0e0;';
+    if (header === '进度') style += 'text-align:center;color:#2e7d32;font-weight:500;';
+    else if (header === '负责人') style += 'text-align:center;';
+    else if (header === '项目名称' || header === '本周完成' || header === '下周计划' || header === '风险点') {
+      style += 'text-align:left;';
+    }
+  }
+  if (tableData.id === 'image-to-table') {
+    style += 'border:1px solid #e0e0e0;';
+    if (header === '巡检结果' && cell === '异常') style += 'color:#e53935;font-weight:600;';
+    if (header === '巡检结果' && cell === '待复检') style += 'color:#f57c00;font-weight:500;';
+    if (header !== '设备名称') style += 'text-align:center;';
+    else style += 'text-align:left;';
+  }
+  return style;
+}
+
+function buildCompletionSidebarHtml(tableData) {
+  const items = (tableData.highlights || []).map(h =>
+    `<div class="value-item"><span class="value-check">✓</span> ${h}</div>`
+  ).join('');
+  return `<div class="msg-content animate-in">
+    <div style="font-weight:600;margin-bottom:8px;">已根据你的需求自动生成「${escapeHtml(tableData.title)}」</div>
+    ${items}
+    <div class="iterate-title">你可以继续迭代：</div>
+    <div class="iterate-item">· 自定义新增业务字段</div>
+    <div class="iterate-item">· 补充复杂运算公式</div>
+    <div class="iterate-item">· 全局优化表格样式格式</div>
+  </div>`;
+}
+
+// =============== 初始化 ===============
+/** 表格专属技能（对齐 Cowork 菜单交互，无文字类技能） */
+const TABLE_SKILLS = [
+  { name: '参考文件生成表格', badge: '模', color: 'cyan' },
+  { name: '网页自动查询', badge: '网', color: 'purple' },
+  { name: 'WPS云文档读取与新建', badge: 'W', color: 'orange' },
+  { name: 'wps-collab', badge: 'w', color: 'blue' },
+  { name: 'PDF', badge: 'P', color: 'green' },
+  { name: '表格AI快速建表', badge: '表', color: 'red' },
+  { name: '数据快速解读', badge: '数', color: 'teal' },
+];
+
+function init() {
+  createDefaultWorkbook();
+  renderSkillMenu();
+  bindEvents();
+  bindBlankCardGridInteractions();
+  bindBlankCardOutsidePanelDismiss();
+  bindInsertAttachmentFileManager();
+  bindSidebarFeatureCards();
+  updateSbSendBtn();
+  autoResizeMainInput();
+  autoResizeSbInput();
+  syncMainInputPlaceholder();
+}
+
+function buildGrid(tableData) {
+  const table = $('gridTable');
+  let html = '<tr><th class="col-header first">#</th>';
+  COLS.forEach(c => { html += `<th class="col-header">${c}</th>`; });
+  html += '</tr>';
+
+  if (tableData) {
+    // Title row
+    html += '<tr>';
+    html += `<td class="row-header">1</td>`;
+    html += `<td colspan="${tableData.headers.length}" style="font-size:14px;font-weight:600;color:#333;text-align:center;background:#f8f9fa;height:28px;">${tableData.title}</td>`;
+    for (let i = tableData.headers.length; i < COLS.length; i++) html += '<td></td>';
+    html += '</tr>';
+
+    // Header row
+    html += '<tr>';
+    html += `<td class="row-header">2</td>`;
+    tableData.headers.forEach((h, i) => {
+      let hStyle = '';
+      if (tableData.id === 'weekly-report-clone' || tableData.id === 'image-to-table') {
+        const leftCols = tableData.id === 'weekly-report-clone'
+          ? ['项目名称', '本周完成', '下周计划', '风险点']
+          : ['设备名称'];
+        const align = leftCols.indexOf(h) >= 0 ? 'left' : 'center';
+        hStyle = 'background:#eceff1;font-weight:600;text-align:' + align + ';border:1px solid #cfd8dc;';
+      }
+      html += `<td class="generated-header" style="${hStyle}">${h} <span class="filter-icon">▾</span></td>`;
+    });
+    for (let i = tableData.headers.length; i < COLS.length; i++) html += '<td></td>';
+    html += '</tr>';
+
+    // Data rows
+    tableData.data.forEach((row, ri) => {
+      html += `<tr><td class="row-header">${ri + 3}</td>`;
+      row.forEach((cell, ci) => {
+        const header = tableData.headers[ci];
+        const style = getGeneratedCellStyle(header, cell, row, tableData);
+        html += `<td class="generated-data" style="${style}">${cell}</td>`;
+      });
+      for (let i = row.length; i < COLS.length; i++) html += '<td></td>';
+      html += '</tr>';
+    });
+
+    // Empty rows after data
+    for (let r = tableData.data.length + 3; r <= ROWS; r++) {
+      html += `<tr><td class="row-header">${r}</td>`;
+      COLS.forEach(() => { html += '<td></td>'; });
+      html += '</tr>';
+    }
+  } else {
+    for (let r = 1; r <= ROWS; r++) {
+      html += `<tr><td class="row-header">${r}</td>`;
+      COLS.forEach((c, ci) => {
+        const cls = (r === 1 && ci === 0) ? ' class="active-cell"' : '';
+        html += `<td data-r="${r}" data-c="${c}"${cls}></td>`;
+      });
+      html += '</tr>';
+    }
+  }
+  table.innerHTML = html;
+}
+
+// =============== 空白表格入口：网格操作（选中不关面板，提交类操作关面板） ===============
+let gridEditingCell = null;
+
+function getActiveGridDataCell() {
+  const table = $('gridTable');
+  if (!table) return null;
+  return table.querySelector('td.active-cell[data-r][data-c]');
+}
+
+function selectGridCell(td) {
+  if (!td || !td.dataset.r) return;
+  $('gridTable').querySelectorAll('td.active-cell').forEach(c => c.classList.remove('active-cell'));
+  td.classList.add('active-cell');
+  const ref = td.dataset.c + td.dataset.r;
+  const refEl = document.querySelector('.sp-formula-bar .cell-ref');
+  if (refEl) refEl.textContent = ref;
+  const formula = document.querySelector('.sp-formula-bar .formula-input');
+  if (formula && formula !== document.activeElement) {
+    formula.value = td.textContent || '';
+    formula.setAttribute('readonly', '');
+  }
+}
+
+function dismissBlankCardPanelOutside(reason) {
+  if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+  if (panelDismissed || blankCardPanelSuppressed) return;
+  blankCardPanelSuppressed = true;
+  applyPanelDisplay();
+  const tips = {
+    toolbar: '已点击表格功能区按钮 → 建表面板自动收起',
+    edit: '已提交单元格编辑 → 建表面板自动收起',
+    paste: '已粘贴内容 → 建表面板自动收起',
+    import: '导入成功 → 建表面板自动收起',
+    style: '已设置单元格样式 → 建表面板自动收起',
+  };
+  updateGuide((tips[reason] || tips.toolbar) + '（可用「快速建表」再次打开）');
+}
+
+function markBlankCardManualAction(kind) {
+  if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+  const sheet = getActiveSheet();
+  if (!sheet || sheet.tableData) return;
+  sheet.manualContent = kind || 'edit';
+  revalidateBlankAndPanel('manual-' + (kind || 'edit'));
+  const tips = {
+    edit: '已提交单元格编辑 → 建表面板自动收起',
+    paste: '已粘贴内容 → 建表面板自动收起',
+    import: '导入成功 → 建表面板自动收起',
+    style: '已设置单元格样式 → 建表面板自动收起',
+  };
+  updateGuide(tips[kind] || tips.edit);
+}
+
+function isInsideBuildPanelZone(target) {
+  return !!(target && target.closest &&
+    target.closest('#aiPanel, #morePopup, #refMenu, #skillMenu, #modelMenu, #hintText'));
+}
+
+function isBlankCardPanelResumeControl(target) {
+  return !!(target && target.closest &&
+    target.closest('#menuAiBtn, #aiEntryBtn'));
+}
+
+function isBlankCardSheetNavControl(target) {
+  return !!(target && target.closest &&
+    target.closest('.sheet-tab, #addSheetBtn, .sheet-nav, #gridArea'));
+}
+
+function isSpreadsheetOutsidePanelControl(target) {
+  if (!target || !target.closest) return false;
+  if (target.closest('.sp-ribbon .tool-btn, .sp-ribbon select, .sp-ribbon .ribbon-tab')) return true;
+  if (target.closest('.sp-titlebar .menu-item, #toggleSidebarBtn')) return true;
+  if (target.closest('.sp-formula-bar .fx-icon')) return true;
+  if (target.closest('.guide-bar .guide-btn')) return true;
+  if (target.closest('.ai-sidebar button, .ai-sidebar .sb-feature-card, .ai-sidebar select')) return true;
+  return false;
+}
+
+function commitGridCellEdit(td, value) {
+  if (!td || !td.dataset.r) return;
+  const text = (value || '').trim();
+  if (!text) return;
+  td.textContent = text;
+  markBlankCardManualAction('edit');
+}
+
+function simulateGridPaste() {
+  const td = getActiveGridDataCell();
+  if (!td) return;
+  td.textContent = '粘贴内容';
+  markBlankCardManualAction('paste');
+}
+
+function simulateGridImport() {
+  const td = getActiveGridDataCell() ||
+    $('gridTable').querySelector('td[data-r="1"][data-c="A"]');
+  if (td) {
+    if (!td.classList.contains('active-cell')) selectGridCell(td);
+    td.textContent = '导入数据';
+  }
+  markBlankCardManualAction('import');
+}
+
+function bindBlankCardGridInteractions() {
+  const grid = $('gridTable');
+  const formula = document.querySelector('.sp-formula-bar .formula-input');
+  if (!grid) return;
+
+  grid.addEventListener('click', (e) => {
+    const td = e.target.closest('td[data-r][data-c]');
+    if (!td) return;
+    selectGridCell(td);
+  });
+
+  grid.addEventListener('dblclick', (e) => {
+    const td = e.target.closest('td[data-r][data-c]');
+    if (!td || !isBlankCardEntryFlow() || !workbookIsBlank) return;
+    selectGridCell(td);
+    gridEditingCell = td;
+    if (formula) {
+      formula.removeAttribute('readonly');
+      formula.value = td.textContent || '';
+      formula.focus();
+      formula.select();
+    }
+    updateGuide('双击进入编辑 → 在公式栏输入后按 Enter 提交');
+  });
+
+  if (formula) {
+    formula.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || !gridEditingCell) return;
+      e.preventDefault();
+      commitGridCellEdit(gridEditingCell, formula.value);
+      gridEditingCell = null;
+      formula.setAttribute('readonly', '');
+    });
+    formula.addEventListener('blur', () => {
+      if (!gridEditingCell) return;
+      const val = formula.value;
+      gridEditingCell = null;
+      formula.setAttribute('readonly', '');
+      if (val.trim() && isBlankCardEntryFlow() && workbookIsBlank) {
+        commitGridCellEdit(getActiveGridDataCell(), val);
+      }
+    });
+  }
+
+  const pasteBtn = $('btnGridPaste');
+  if (pasteBtn) {
+    pasteBtn.addEventListener('click', () => {
+      if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+      simulateGridPaste();
+    });
+  }
+  const styleBtn = $('btnGridStyle');
+  if (styleBtn) {
+    styleBtn.addEventListener('click', () => {
+      if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+      markBlankCardManualAction('style');
+    });
+  }
+  const importBtn = $('btnGridImport');
+  if (importBtn) {
+    importBtn.addEventListener('click', () => {
+      if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+      simulateGridImport();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      const inGrid = e.target.closest && e.target.closest('#gridArea');
+      const inFormula = e.target === formula;
+      if (inGrid || inFormula) {
+        e.preventDefault();
+        simulateGridPaste();
+      }
+    }
+  });
+}
+
+function bindBlankCardOutsidePanelDismiss() {
+  const page = $('spreadsheetPage');
+  if (!page) return;
+  page.addEventListener('click', (e) => {
+    if (!isBlankCardEntryFlow() || !workbookIsBlank) return;
+    if (panelDismissed || blankCardPanelSuppressed) return;
+    const target = e.target;
+    if (isInsideBuildPanelZone(target)) return;
+    if (isBlankCardPanelResumeControl(target)) return;
+    if (isBlankCardSheetNavControl(target)) return;
+    if (!isSpreadsheetOutsidePanelControl(target)) return;
+    dismissBlankCardPanelOutside('toolbar');
+  }, true);
+}
+
+// =============== 面板展示判定（V2） ===============
+function passiveClosePanel() {
+  $('aiPanel').classList.add('hidden');
+  $('hintText').classList.remove('show');
+}
+
+/** 主动唤起：展开完整面板 */
+function openPanelActive() {
+  if (!canOpenBuildPanel()) return;
+  panelDismissed = false;
+  blankCardPanelSuppressed = false;
+  showHintOnlyOnBlank = false;
+  if (isBlankCardEntryFlow() && workbookIsBlank) {
+    applyPanelDisplay();
+    return;
+  }
+  $('aiPanel').classList.remove('hidden');
+  $('hintText').classList.remove('show');
+  currentState = State.SHOW;
+}
+
+/** 分镜1：新建页打开文件 → 销售数据工作簿，界面无面板/提示 */
+function openExistingSalesWorkbook() {
+  $('newPage').style.display = 'none';
+  $('spreadsheetPage').style.display = 'flex';
+  blankCardEntryFlow = false;
+  aiFileEntryFlow = false;
+  workbookSource = 'opened-sales';
+  workbookCollapsed = false;
+  panelDismissed = true;
+  showHintOnlyOnBlank = false;
+  sheetIdCounter = 1;
+  sheets = [{
+    id: 's1',
+    name: 'Sheet1',
+    tableData: OPENED_SALES_SHEET,
+    tableTypeId: 'opened-sales',
+  }];
+  activeSheetId = 's1';
+  generatedTableType = 'opened-sales';
+  $('aiSidebar').classList.remove('show');
+  sidebarOpenedForGeneration = false;
+  restoreSidebarHome();
+  clearInputContent($('mainInput'));
+  clearPanelAttachments();
+  lastInput = '';
+  updateSendBtn();
+  autoResizeMainInput();
+  closeAllPopups();
+  renderSheetTabs();
+  refreshActiveSheetGrid();
+  workbookIsBlank = false;
+  currentState = State.NON_BLANK;
+  passiveClosePanel();
+  updateGuide('已打开销售数据表 → 可用「快速建表」或双击 Ctrl 唤起面板');
+}
+
+function isTemplateCloneFromUploadFlow(userInput, skill, attachments) {
+  if (skill !== '参考文件生成表格') return false;
+  if (!attachments || !attachments.length) return false;
+  const t = (userInput || '').replace(/\s/g, '');
+  const ref = TEMPLATE_CLONE_PROMPT.replace(/\s/g, '');
+  if (t === ref || t.includes(ref)) return true;
+  return /参考/.test(userInput || '') && /上传|文件|附件/.test(userInput || '') && /同款|模板|一致/.test(userInput || '');
+}
+
+function isImageToTableFlow(userInput, skill, attachments) {
+  if (!attachments || !attachments.some(a => a.kind === 'image')) return false;
+  if (skill === '图片转表格') return true;
+  const t = (userInput || '').replace(/\s/g, '');
+  if (!t) return true;
+  const ref = IMAGE_TO_TABLE_PROMPT.replace(/\s/g, '');
+  if (t === ref || t.includes(ref)) return true;
+  return /图转表|图片转|识别.*图|截图.*表|转成.*表|提取.*表格|表格识别/.test(userInput || '');
+}
+
+/** 按输入框内 DOM 顺序收集附件/技能（与实际操作顺序一致） */
+function collectEditorChipDisplayOrder() {
+  const el = $('mainInput');
+  if (!el) return [];
+  const items = [];
+  el.childNodes.forEach(node => {
+    if (node.nodeType !== 1) return;
+    if (node.classList.contains('attach-chip')) {
+      const att = panelAttachments.find(a => a.id === node.dataset.attId);
+      items.push({
+        type: 'attach',
+        id: node.dataset.attId || '',
+        name: att ? att.name : (node.querySelector('.attach-name') || {}).textContent || '',
+        kind: att ? att.kind : 'file',
+      });
+    } else if (node.classList.contains('skill-chip')) {
+      items.push({ type: 'skill', name: node.dataset.skill || '' });
+    }
+  });
+  return items;
+}
+
+function enrichChipDisplayOrder(chipOrder) {
+  return (chipOrder || []).map(item => {
+    if (item.type !== 'attach') return item;
+    const att = panelAttachments.find(a => a.id === item.id);
+    return {
+      ...item,
+      name: att ? att.name : item.name,
+      kind: att ? att.kind : item.kind,
+      previewUrl: att && att.previewUrl ? att.previewUrl : null,
+    };
+  });
+}
+
+function buildPresetUserMsgHtml(userInput) {
+  let html = '<div class="msg-content">';
+  if (userInput) {
+    html += '<span class="sb-user-text">' + escapeHtml(userInput) + '</span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function buildSbAttachIconHtml(kind) {
+  if (kind === 'image') {
+    return '<span class="sb-attach-icon sb-attach-icon--image" aria-hidden="true">' +
+      '<svg viewBox="0 0 16 16" fill="none"><rect x="2.5" y="3.2" width="11" height="9.6" rx="1" fill="currentColor" fill-opacity=".12" stroke="currentColor" stroke-width="1.05"/>' +
+      '<circle cx="5.6" cy="6.8" r=".9" fill="currentColor"/>' +
+      '<path d="M2.5 11.2 6 7.8l2.2 2 5.3-4.6" fill="none" stroke="currentColor" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  }
+  return '<span class="sb-attach-icon sb-attach-icon--file" aria-hidden="true">📎</span>';
+}
+
+function buildTemplateFlowUserMsgHtml(userInput, chipOrder) {
+  let html = '<div class="msg-content">';
+  (chipOrder || []).forEach(item => {
+    if (item.type === 'attach') {
+      const displayName = item.kind === 'image' ? IMAGE_TO_TABLE_ATTACH_NAME : item.name;
+      html += '<div class="sb-attach-card sb-attach-card--' + escapeHtml(item.kind) + '">' +
+        buildSbAttachIconHtml(item.kind) + '<span>' + escapeHtml(displayName) + '</span></div>';
+    } else if (item.type === 'skill' && item.name) {
+      html += '<div class="sb-skill-ref">⚡ ' + escapeHtml(item.name) + '</div>';
+    }
+  });
+  if (userInput) {
+    html += '<div class="sb-user-text">' + escapeHtml(userInput) + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function isSalesAggregationPrompt(text) {
+  const t = (text || '').replace(/\s/g, '');
+  const ref = SALES_AGGREGATION_PROMPT.replace(/\s/g, '');
+  if (t === ref || t.includes(ref)) return true;
+  return /已回款/.test(text) && /销售人员/.test(text) && /(业绩|汇总|统计)/.test(text) && /Sheet2|新表|统计表/.test(text);
+}
+
+/** 关闭建表面板：不保留未提交输入，不展示快捷键提示 */
+function closeAiPanelFully() {
+  panelDismissed = true;
+  workbookCollapsed = false;
+  showHintOnlyOnBlank = false;
+  lastInput = '';
+  currentSkill = '';
+  clearInputContent($('mainInput'));
+  clearPanelAttachments();
+  updateSendBtn();
+  autoResizeMainInput();
+  closeAllPopups();
+  $('aiPanel').classList.add('hidden');
+  $('hintText').classList.remove('show');
+  currentState = State.DISMISSED;
+}
+
+function applyPanelDisplay() {
+  if (currentState === State.GENERATING) {
+    passiveClosePanel();
+    return;
+  }
+  if (!workbookIsBlank) {
+    panelDismissed = false;
+    passiveClosePanel();
+    currentState = State.NON_BLANK;
+    return;
+  }
+  if (panelDismissed) {
+    $('aiPanel').classList.add('hidden');
+    $('hintText').classList.remove('show');
+    currentState = State.DISMISSED;
+    return;
+  }
+  if (isBlankCardEntryFlow()) {
+    $('hintText').classList.remove('show');
+    if (blankCardPanelSuppressed) {
+      $('aiPanel').classList.add('hidden');
+      currentState = State.DISMISSED;
+    } else {
+      $('aiPanel').classList.remove('hidden');
+      currentState = State.SHOW;
+    }
+    return;
+  }
+  const showHintOnly = workbookCollapsed || showHintOnlyOnBlank;
+  if (showHintOnly) {
+    $('aiPanel').classList.add('hidden');
+    $('hintText').classList.add('show');
+    currentState = State.COLLAPSED;
+  } else {
+    $('aiPanel').classList.remove('hidden');
+    $('hintText').classList.remove('show');
+    currentState = State.SHOW;
+  }
+}
+
+function enterGeneratingMode() {
+  currentState = State.GENERATING;
+  passiveClosePanel();
+  const sidebar = $('aiSidebar');
+  if (!sidebar.classList.contains('show')) {
+    sidebarOpenedForGeneration = true;
+    sidebar.classList.add('show');
+  } else {
+    sidebarOpenedForGeneration = false;
+  }
+}
+
+function finishGeneratingMode() {
+  if (sidebarOpenedForGeneration) {
+    $('aiSidebar').classList.remove('show');
+    sidebarOpenedForGeneration = false;
+  }
+}
+
+function updateGuide(text) {
+  $('guideText').textContent = '💡 ' + text;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+const FIELD_CHIP_ZWSP = '\u200B';
+
+function buildFieldChipHtml(label) {
+  const safe = escapeHtml(label);
+  return '<span class="field-chip is-placeholder" contenteditable="false" data-placeholder="' + safe + '">' +
+    '<span class="field-chip-inner" contenteditable="true" spellcheck="false" tabindex="-1">' + safe + '</span>' +
+    '<span class="field-chip-ghost" aria-hidden="true">' + safe + '</span></span>';
+}
+
+function getFieldChipFromNode(node, editor) {
+  if (!node || !editor) return null;
+  const inner = node.closest && node.closest('.field-chip-inner');
+  if (inner && editor.contains(inner)) {
+    const chip = inner.closest('.field-chip');
+    if (chip && editor.contains(chip)) return chip;
+  }
+  const chip = node.closest && node.closest('.field-chip');
+  if (chip && editor.contains(chip)) return chip;
+  return null;
+}
+
+function getFieldChipInner(chip) {
+  return chip ? (chip.querySelector('.field-chip-inner') || chip) : null;
+}
+
+/** 将 {{可替换字段}}、[字段] 渲染为可编辑占位芯片 */
+function promptTextToHtml(text) {
+  if (!text) return '';
+  const escaped = escapeHtml(text);
+  return escaped
+    .replace(/\{\{([^}]+)\}\}/g, (_, label) => buildFieldChipHtml(label))
+    .replace(/\[([^\]]+)\]/g, (_, label) => buildFieldChipHtml(label));
+}
+
+function resetFieldChip(chip) {
+  if (!chip) return;
+  chip.style.width = '';
+  chip.style.minWidth = '';
+  chip.style.maxWidth = '';
+}
+
+function getFieldChipRawText(inner) {
+  return inner ? (inner.textContent || '').replace(/\u200B/g, '') : '';
+}
+
+function isFieldChipShowingPlaceholder(chip) {
+  if (!chip || chip.classList.contains('is-filled')) return false;
+  const inner = getFieldChipInner(chip);
+  const placeholder = chip.dataset.placeholder || '';
+  const text = getFieldChipRawText(inner);
+  return !text || text === placeholder;
+}
+
+function placeCaretAtStart(el) {
+  if (!el) return;
+  const range = document.createRange();
+  range.setStart(el, 0);
+  range.collapse(true);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function focusFieldChipInner(chip, forceStart) {
+  const inner = getFieldChipInner(chip);
+  if (!inner) return;
+  inner.focus();
+  if (forceStart || isFieldChipShowingPlaceholder(chip)) placeCaretAtStart(inner);
+}
+
+function activateFieldChipForEdit(chip) {
+  const inner = getFieldChipInner(chip);
+  if (!inner) return;
+  if (!isFieldChipShowingPlaceholder(chip)) return;
+  inner.textContent = FIELD_CHIP_ZWSP;
+  chip.classList.add('is-placeholder');
+  chip.classList.remove('is-filled');
+  requestAnimationFrame(() => focusFieldChipInner(chip));
+}
+
+function finalizeFieldChipOnBlur(chip) {
+  const inner = getFieldChipInner(chip);
+  if (!inner) return;
+  const placeholder = chip.dataset.placeholder || '';
+  let text = getFieldChipRawText(inner);
+  if (text) {
+    inner.textContent = text;
+    chip.classList.add('is-filled');
+    chip.classList.remove('is-placeholder');
+  } else {
+    inner.textContent = placeholder;
+    chip.classList.add('is-placeholder');
+    chip.classList.remove('is-filled');
+  }
+  resetFieldChip(chip);
+}
+
+function syncFieldChipState(chip) {
+  resetFieldChip(chip);
+  const inner = getFieldChipInner(chip);
+  if (!inner) return;
+  const placeholder = chip.dataset.placeholder || '';
+  const text = getFieldChipRawText(inner);
+  if (!text || text === placeholder) {
+    if (!chip.classList.contains('is-focused')) inner.textContent = placeholder;
+    chip.classList.add('is-placeholder');
+    chip.classList.remove('is-filled');
+  } else {
+    chip.classList.add('is-filled');
+    chip.classList.remove('is-placeholder');
+  }
+}
+
+function initAllFieldChips(root) {
+  const scope = root || document;
+  scope.querySelectorAll('.field-chip').forEach(syncFieldChipState);
+}
+
+function clearFieldChipFocus(editor) {
+  if (!editor) return;
+  editor.querySelectorAll('.field-chip.is-focused').forEach(c => c.classList.remove('is-focused'));
+}
+
+function bindFieldChipInteractions(editor, onResize) {
+  if (!editor || editor.dataset.fieldChipBound === '1') return;
+  editor.dataset.fieldChipBound = '1';
+
+  editor.addEventListener('mousedown', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (!chip) return;
+    e.stopPropagation();
+    clearFieldChipFocus(editor);
+    chip.classList.add('is-focused');
+    const inner = getFieldChipInner(chip);
+    if (isFieldChipShowingPlaceholder(chip)) {
+      e.preventDefault();
+      activateFieldChipForEdit(chip);
+      if (inner) {
+        inner.focus();
+        placeCaretAtStart(inner);
+      }
+    } else if (inner) {
+      inner.focus();
+    }
+  });
+
+  editor.addEventListener('click', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (!chip) return;
+    e.stopPropagation();
+    const inner = getFieldChipInner(chip);
+    if (!inner || document.activeElement === inner) return;
+    if (isFieldChipShowingPlaceholder(chip)) {
+      activateFieldChipForEdit(chip);
+      focusFieldChipInner(chip, true);
+    } else {
+      inner.focus();
+    }
+  });
+
+  editor.addEventListener('focusin', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (chip) {
+      clearFieldChipFocus(editor);
+      chip.classList.add('is-focused');
+      if (isFieldChipShowingPlaceholder(chip)) activateFieldChipForEdit(chip);
+      return;
+    }
+    const pending = editor.querySelector('.field-chip.is-focused');
+    if (pending && e.target === editor) {
+      const inner = getFieldChipInner(pending);
+      if (inner) requestAnimationFrame(() => focusFieldChipInner(pending, isFieldChipShowingPlaceholder(pending)));
+    }
+  });
+
+  editor.addEventListener('focusout', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (!chip) return;
+    setTimeout(() => {
+      if (!chip.classList.contains('is-focused')) return;
+      const active = document.activeElement;
+      const inner = getFieldChipInner(chip);
+      if (active && (chip.contains(active) || (inner && inner === active))) return;
+      chip.classList.remove('is-focused');
+      finalizeFieldChipOnBlur(chip);
+    }, 0);
+  });
+
+  editor.addEventListener('beforeinput', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (!chip) return;
+    const inner = getFieldChipInner(chip);
+    if (!inner) return;
+    if (e.inputType === 'insertText' || e.inputType === 'insertReplacementText') {
+      const current = getFieldChipRawText(inner);
+      if (!current && e.data) {
+        e.preventDefault();
+        inner.textContent = e.data;
+        chip.classList.add('is-filled');
+        chip.classList.remove('is-placeholder');
+        placeCaretAtEnd(inner);
+        inner.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  });
+
+  editor.addEventListener('input', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (!chip) return;
+    const inner = getFieldChipInner(chip);
+    const text = getFieldChipRawText(inner);
+    if (text) {
+      if ((inner.textContent || '').includes(FIELD_CHIP_ZWSP)) inner.textContent = text;
+      chip.classList.add('is-filled');
+      chip.classList.remove('is-placeholder');
+    } else {
+      inner.textContent = FIELD_CHIP_ZWSP;
+      chip.classList.add('is-placeholder');
+      chip.classList.remove('is-filled');
+      placeCaretAtStart(inner);
+    }
+    if (onResize) onResize();
+  });
+
+  editor.addEventListener('keydown', (e) => {
+    const chip = getFieldChipFromNode(e.target, editor);
+    if (!chip) return;
+    e.stopPropagation();
+    const inner = getFieldChipInner(chip);
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (inner) inner.blur();
+      return;
+    }
+    if (!inner || chip.classList.contains('is-filled')) return;
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      inner.textContent = e.key;
+      chip.classList.add('is-filled');
+      chip.classList.remove('is-placeholder');
+      placeCaretAtEnd(inner);
+      inner.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+}
+
+function placeCaretAtEnd(el) {
+  if (!el) return;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  range.collapse(false);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function buildPromptHtml(prompt) {
+  return promptTextToHtml(prompt);
+}
+
+function getFieldChipExportText(chip) {
+  const inner = chip.querySelector('.field-chip-inner');
+  const placeholder = chip.dataset.placeholder || '';
+  const text = getFieldChipRawText(inner);
+  if (chip.classList.contains('is-filled') && text) return text;
+  return placeholder;
+}
+
+function getInputPlainText(el) {
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('.skill-chip, .attach-chip').forEach(n => n.remove());
+  clone.querySelectorAll('.field-chip').forEach(chip => {
+    const textNode = document.createTextNode(getFieldChipExportText(chip));
+    chip.parentNode.replaceChild(textNode, chip);
+  });
+  return (clone.innerText || '').replace(/\u00A0/g, ' ').replace(/\u200B/g, '').trim();
+}
+
+function syncCurrentSkillFromEditor() {
+  const chip = $('mainInput') && $('mainInput').querySelector('.skill-chip');
+  currentSkill = chip ? (chip.dataset.skill || '') : '';
+}
+
+/** 输入区是否有实质内容（文字 / 技能 / 附件 / 模板芯片） */
+function hasMainInputContent() {
+  const el = $('mainInput');
+  if (!el) return false;
+  if (el.querySelector('.skill-chip, .attach-chip')) return true;
+  return !!getInputPlainText(el);
+}
+
+function syncMainInputPlaceholder() {
+  const el = $('mainInput');
+  if (!el) return;
+  syncCurrentSkillFromEditor();
+  el.classList.toggle('show-placeholder', !hasMainInputContent());
+}
+
+function skillChipHtml(name) {
+  return '<span class="skill-chip" contenteditable="false" data-skill="' + escapeHtml(name) + '">' +
+    '<span class="skill-chip-text">⚡ ' + escapeHtml(name) + '</span>' +
+    '<span class="skill-chip-remove" role="button" tabindex="-1" aria-label="移除技能">×</span></span>';
+}
+
+function placeCaretAfter(node) {
+  const range = document.createRange();
+  range.setStartAfter(node);
+  range.collapse(true);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+/** 记录 mainInput 内最后一次光标位置（失焦选文件/开菜单后仍可插入） */
+let mainInputSavedRange = null;
+
+function saveMainInputCaretIfInEditor() {
+  const el = $('mainInput');
+  if (!el) return;
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (el.contains(range.commonAncestorContainer)) {
+    mainInputSavedRange = range.cloneRange();
+  }
+}
+
+function normalizeChipInsertRange(el, range) {
+  let container = range.commonAncestorContainer;
+  if (container.nodeType === 3) container = container.parentNode;
+  if (!container || !container.closest) return range;
+
+  const fieldChip = container.closest('.field-chip');
+  if (fieldChip && el.contains(fieldChip)) {
+    const r = document.createRange();
+    r.setStartAfter(fieldChip);
+    r.collapse(true);
+    return r;
+  }
+
+  const inlineChip = container.closest('.attach-chip, .skill-chip');
+  if (inlineChip && el.contains(inlineChip)) {
+    const r = document.createRange();
+    r.setStartAfter(inlineChip);
+    r.collapse(true);
+    return r;
+  }
+
+  return range;
+}
+
+function getMainInputInsertRange(el) {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount) {
+    const live = sel.getRangeAt(0);
+    if (el.contains(live.commonAncestorContainer)) {
+      return normalizeChipInsertRange(el, live.cloneRange());
+    }
+  }
+  if (mainInputSavedRange && el.contains(mainInputSavedRange.commonAncestorContainer)) {
+    return normalizeChipInsertRange(el, mainInputSavedRange.cloneRange());
+  }
+  return null;
+}
+
+/** 在光标处插入附件/技能芯片；无有效光标时追加到末尾 */
+function insertInlineChipAtCaret(el, chip) {
+  if (!el || !chip) return;
+  el.focus();
+
+  const tail = document.createTextNode('\u00a0');
+  const range = getMainInputInsertRange(el);
+
+  if (range) {
+    range.collapse(true);
+    range.insertNode(tail);
+    range.insertNode(chip);
+    mainInputSavedRange = document.createRange();
+    mainInputSavedRange.setStartAfter(tail);
+    mainInputSavedRange.collapse(true);
+    placeCaretAfter(tail);
+    return;
+  }
+
+  el.appendChild(chip);
+  el.appendChild(tail);
+  mainInputSavedRange = document.createRange();
+  mainInputSavedRange.setStartAfter(tail);
+  mainInputSavedRange.collapse(true);
+  placeCaretAfter(tail);
+}
+
+function buildSkillChipElement(name) {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = skillChipHtml(name);
+  return wrap.firstElementChild;
+}
+
+/** 技能芯片：替换旧技能时保持原位置，首次选择则追加到序列末尾 */
+function insertSkillChip(name) {
+  const el = $('mainInput');
+  if (!el || !name) return;
+
+  const oldSkill = el.querySelector('.skill-chip');
+  const parent = oldSkill ? oldSkill.parentNode : null;
+  const refNode = oldSkill ? oldSkill.nextSibling : null;
+  if (oldSkill) oldSkill.remove();
+
+  currentSkill = name;
+  const chip = buildSkillChipElement(name);
+  const tail = document.createTextNode('\u00a0');
+
+  el.focus();
+  if (parent) {
+    parent.insertBefore(chip, refNode);
+    if (!chip.nextSibling || chip.nextSibling.nodeType !== 3) {
+      parent.insertBefore(tail, chip.nextSibling);
+    }
+    placeCaretAfter(chip.nextSibling && chip.nextSibling.nodeType === 3 ? chip.nextSibling : tail);
+  } else {
+    insertInlineChipAtCaret(el, chip);
+  }
+
+  syncMainInputPlaceholder();
+  updateSendBtn();
+  autoResizeMainInput();
+}
+
+function removeSkillChipFromEditor() {
+  const el = $('mainInput');
+  if (el) el.querySelectorAll('.skill-chip').forEach(c => c.remove());
+  currentSkill = '';
+  syncMainInputPlaceholder();
+  updateSendBtn();
+}
+
+function setInputContent(el, text) {
+  if (el.id === 'mainInput') {
+    clearPanelAttachments();
+    mainInputSavedRange = null;
+  }
+  if (!text) {
+    el.innerHTML = '';
+    if (el.id === 'mainInput') {
+      currentSkill = '';
+      syncMainInputPlaceholder();
+    }
+  } else {
+    el.innerHTML = buildPromptHtml(text);
+    initAllFieldChips(el);
+    if (el.id === 'mainInput') syncMainInputPlaceholder();
+  }
+}
+
+function clearInputContent(el) {
+  if (el.id === 'mainInput') {
+    clearPanelAttachments();
+    el.innerHTML = '';
+    currentSkill = '';
+    mainInputSavedRange = null;
+    syncMainInputPlaceholder();
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function setupPromptEditor(el, onResize) {
+  bindFieldChipInteractions(el, onResize);
+  initAllFieldChips(el);
+  el.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    if (document.queryCommandSupported('insertText')) {
+      document.execCommand('insertText', false, text);
+    } else {
+      el.textContent += text;
+    }
+    initAllFieldChips(el);
+    if (onResize) onResize();
+  });
+}
+
+function updateSendBtn() {
+  const btn = $('sendBtn');
+  syncCurrentSkillFromEditor();
+  const hasContent = hasMainInputContent() || panelAttachments.length > 0;
+  if (hasContent) {
+    btn.classList.remove('disabled');
+    btn.classList.add('active');
+  } else {
+    btn.classList.add('disabled');
+    btn.classList.remove('active');
+  }
+}
+
+// =============== 本地附件（真实文件选择器 + 附件卡片） ===============
+const ATTACH_ICON_SVG = {
+  image: '<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.2" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="7" r="1.2" fill="currentColor"/><path d="M2 11l3.5-3.5 2.5 2.5L14 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+  pdf: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="5" y="12" font-size="4" fill="currentColor" font-weight="700">PDF</text></svg>',
+  word: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">DOC</text></svg>',
+  excel: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">XLS</text></svg>',
+  ppt: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">PPT</text></svg>',
+  file: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/></svg>',
+};
+
+function getAttachmentKind(file) {
+  const name = (file.name || '').toLowerCase();
+  const mime = file.type || '';
+  if (mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(name)) return 'image';
+  if (mime === 'application/pdf' || /\.pdf$/.test(name)) return 'pdf';
+  if (/word|document/.test(mime) || /\.(doc|docx)$/.test(name)) return 'word';
+  if (/sheet|excel/.test(mime) || /\.(xls|xlsx|csv)$/.test(name)) return 'excel';
+  if (/presentation|powerpoint/.test(mime) || /\.(ppt|pptx)$/.test(name)) return 'ppt';
+  return 'file';
+}
+
+function shortenFileName(name, max) {
+  if (!name || name.length <= max) return name || '未命名';
+  const dot = name.lastIndexOf('.');
+  if (dot <= 0) return name.slice(0, max - 1) + '…';
+  const ext = name.slice(dot);
+  const base = name.slice(0, dot);
+  const keep = Math.max(4, max - ext.length - 1);
+  return base.slice(0, keep) + '…' + ext;
+}
+
+function openLocalFilePicker() {
+  saveMainInputCaretIfInEditor();
+  const input = $('localFileInput');
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+function buildAttachChipElement(att) {
+  const chip = document.createElement('span');
+  chip.className = 'attach-chip attach-chip--' + att.kind;
+  chip.contentEditable = 'false';
+  chip.dataset.attId = att.id;
+
+  const icon = document.createElement('span');
+  icon.className = 'attach-icon';
+  if (att.kind === 'image' && att.previewUrl) {
+    const img = document.createElement('img');
+    img.src = att.previewUrl;
+    img.alt = '';
+    icon.appendChild(img);
+  } else {
+    const svgWrap = document.createElement('span');
+    svgWrap.innerHTML = ATTACH_ICON_SVG[att.kind] || ATTACH_ICON_SVG.file;
+    icon.appendChild(svgWrap.firstElementChild || svgWrap);
+  }
+
+  const name = document.createElement('span');
+  name.className = 'attach-name';
+  name.title = att.name;
+  name.textContent = shortenFileName(att.name, 22);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'attach-remove';
+  removeBtn.dataset.removeId = att.id;
+  removeBtn.setAttribute('aria-label', '移除附件');
+  removeBtn.textContent = '×';
+
+  chip.appendChild(icon);
+  chip.appendChild(name);
+  chip.appendChild(removeBtn);
+  return chip;
+}
+
+/** 附件芯片插入到当前光标位置 */
+function insertAttachChip(att) {
+  const el = $('mainInput');
+  if (!el || !att) return;
+  insertInlineChipAtCaret(el, buildAttachChipElement(att));
+}
+
+function addPanelAttachments(fileList) {
+  Array.from(fileList || []).forEach(file => {
+    panelAttachmentIdSeq += 1;
+    const kind = getAttachmentKind(file);
+    const item = {
+      id: 'att-' + panelAttachmentIdSeq,
+      file,
+      name: file.name,
+      kind,
+      previewUrl: kind === 'image' ? URL.createObjectURL(file) : null,
+    };
+    panelAttachments.push(item);
+    insertAttachChip(item);
+  });
+  syncMainInputPlaceholder();
+  updateSendBtn();
+  autoResizeMainInput();
+}
+
+function removePanelAttachment(id) {
+  const item = panelAttachments.find(a => a.id === id);
+  if (item && item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+  panelAttachments = panelAttachments.filter(a => a.id !== id);
+  const chip = $('mainInput') && $('mainInput').querySelector('.attach-chip[data-att-id="' + id + '"]');
+  if (chip) chip.remove();
+  syncMainInputPlaceholder();
+  updateSendBtn();
+  autoResizeMainInput();
+}
+
+function clearPanelAttachments() {
+  panelAttachments.forEach(a => {
+    if (a.previewUrl) URL.revokeObjectURL(a.previewUrl);
+  });
+  panelAttachments = [];
+  const el = $('mainInput');
+  if (el) el.querySelectorAll('.attach-chip').forEach(c => c.remove());
+}
+
+function autoResizeTextarea(el, opts) {
+  if (!el) return;
+  const min = (opts && opts.min) || 22;
+  const max = (opts && opts.max) || 120;
+  el.style.height = '1px';
+  const h = Math.min(Math.max(el.scrollHeight, min), max);
+  el.style.height = h + 'px';
+  el.style.overflowY = el.scrollHeight > max ? 'auto' : 'hidden';
+}
+
+function autoResizeMainInput() {
+  autoResizeTextarea($('mainInput'), { min: 22, max: 88 });
+}
+
+function autoResizeSbInput() {
+  autoResizeTextarea($('sbInput'), { min: 22, max: 120 });
+}
+
+function updateSbSendBtn() {
+  const btn = $('sbSend');
+  if (!btn) return;
+  if (getInputPlainText($('sbInput'))) btn.classList.add('active');
+  else btn.classList.remove('active');
+}
+
+// =============== 事件绑定 ===============
+function bindEvents() {
+  setupPromptEditor($('mainInput'), () => {
+    lastInput = getInputPlainText($('mainInput'));
+    updateSendBtn();
+    autoResizeMainInput();
+  });
+  setupPromptEditor($('sbInput'), () => {
+    updateSbSendBtn();
+    autoResizeSbInput();
+  });
+
+  document.addEventListener('selectionchange', saveMainInputCaretIfInEditor);
+  $('mainInput').addEventListener('keyup', saveMainInputCaretIfInEditor);
+  $('mainInput').addEventListener('mouseup', saveMainInputCaretIfInEditor);
+
+  $('mainInput').addEventListener('input', () => {
+    lastInput = getInputPlainText($('mainInput'));
+    syncMainInputPlaceholder();
+    updateSendBtn();
+    autoResizeMainInput();
+  });
+  $('mainInput').addEventListener('click', (e) => {
+    const rmSkill = e.target.closest('.skill-chip-remove');
+    if (rmSkill) {
+      e.preventDefault();
+      e.stopPropagation();
+      removeSkillChipFromEditor();
+      $('mainInput').focus();
+      updateGuide('已移除技能引用');
+      return;
+    }
+    const rmAtt = e.target.closest('.attach-chip .attach-remove');
+    if (rmAtt && rmAtt.dataset.removeId) {
+      e.preventDefault();
+      e.stopPropagation();
+      removePanelAttachment(rmAtt.dataset.removeId);
+      $('mainInput').focus();
+      updateGuide('已移除附件');
+    }
+  });
+  $('sbInput').addEventListener('input', () => {
+    updateSbSendBtn();
+    autoResizeSbInput();
+  });
+  // 新建空白表格 → 直接展示建表面板（无快捷键暗词）
+  $('btnNewBlank').addEventListener('click', () => {
+    enterSpreadsheet('blank-card');
+    updateGuide('「空白表格」→ 直接展示建表面板；编辑/粘贴/导入/设样式或点功能区按钮后自动收起');
+  });
+
+  // 新建页 AI 建表 → 空白表 + 统一文件管理器 → 侧边栏转表
+  $('btnAiEntry').addEventListener('click', () => {
+    enterSpreadsheet('ai-file-entry');
+    updateGuide('「文件/图片 一键转表」→ 请选择本地或云文档；打开后由侧边栏执行转表');
+    requestAnimationFrame(() => openInsertAttachmentFileManager());
+  });
+
+  $('btnOpenFile').addEventListener('click', () => {
+    openExistingSalesWorkbook();
+  });
+
+  function fillExamplePrompt(btn) {
+    setInputContent($('mainInput'), btn.dataset.prompt);
+    lastInput = getInputPlainText($('mainInput'));
+    initAllFieldChips($('mainInput'));
+    updateSendBtn();
+    requestAnimationFrame(() => autoResizeMainInput());
+    closeAllPopups();
+    updateGuide('指令已填充到输入框，点击高亮字段可针对性修改后发送');
+  }
+
+  // 示例按钮
+  document.querySelectorAll('.example-btn[data-prompt]').forEach(btn => {
+    btn.addEventListener('click', () => fillExamplePrompt(btn));
+  });
+
+  // 更多示例弹窗中的按钮
+  $('morePopup').addEventListener('click', (e) => e.stopPropagation());
+  document.querySelectorAll('.popup-example-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fillExamplePrompt(btn);
+    });
+  });
+
+  // 更多示例按钮
+  $('moreBtnTrigger').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const popup = $('morePopup');
+    const isOpen = popup.classList.contains('show');
+    closeAllPopups();
+    if (!isOpen) {
+      const btnRect = e.currentTarget.getBoundingClientRect();
+      const panelRect = $('aiPanel').getBoundingClientRect();
+      popup.style.left = (btnRect.left - panelRect.left) + 'px';
+      popup.classList.add('show');
+      $('overlay').classList.add('show');
+    }
+  });
+
+  // 引用按钮（+）
+  $('refMenu').addEventListener('click', (e) => e.stopPropagation());
+  $('refBtn').addEventListener('mousedown', (e) => {
+    saveMainInputCaretIfInEditor();
+  });
+  $('refBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = $('refMenu');
+    const isOpen = menu.classList.contains('show');
+    closeAllPopups();
+    if (!isOpen) {
+      menu.classList.add('show');
+      $('overlay').classList.add('show');
+    }
+  });
+
+  // 引用菜单项点击
+  document.querySelectorAll('.ref-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = item.dataset.action;
+      closeAllPopups();
+      if (action === 'local') {
+        openLocalFilePicker();
+      } else if (action === 'cloud') {
+        updateGuide('已选择「我的WPS文件」→ 实际产品中将打开云文档面板');
+      }
+    });
+  });
+
+  $('localFileInput').addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length) {
+      addPanelAttachments(e.target.files);
+      updateGuide('已添加 ' + e.target.files.length + ' 个本地附件，悬停卡片可移除');
+    }
+    e.target.value = '';
+  });
+
+  // 技能按钮（⚡）— 表格技能，对齐 Cowork
+  $('skillMenu').addEventListener('click', (e) => e.stopPropagation());
+  $('skillBtn').addEventListener('mousedown', (e) => {
+    saveMainInputCaretIfInEditor();
+  });
+  $('skillBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = $('skillMenu');
+    const isOpen = menu.classList.contains('show');
+    closeAllPopups();
+    if (!isOpen) {
+      menu.classList.remove('is-empty');
+      menu.classList.add('show');
+      $('overlay').classList.add('show');
+      $('skillSearch').value = '';
+      filterSkills('');
+      setTimeout(() => $('skillSearch').focus(), 50);
+      updateGuide('⚡ 技能菜单：表格技能');
+    }
+  });
+
+  $('skillSearch').addEventListener('input', (e) => {
+    filterSkills(e.target.value.trim());
+  });
+  $('skillSearch').addEventListener('click', (e) => e.stopPropagation());
+
+  $('skillList').addEventListener('click', (e) => {
+    const item = e.target.closest('.skill-item');
+    if (!item || item.style.display === 'none') return;
+    selectTableSkill(item.dataset.skill);
+  });
+
+  $('modelMenu').addEventListener('click', (e) => e.stopPropagation());
+
+  // 模型按钮
+  $('modelBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = $('modelMenu');
+    const isOpen = menu.classList.contains('show');
+    closeAllPopups();
+    if (!isOpen) {
+      menu.classList.add('show');
+      $('overlay').classList.add('show');
+      document.querySelector('.model-btn .arrow').classList.add('up');
+    }
+  });
+
+  // 模型选择
+  document.querySelectorAll('.mm-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.mm-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelector('.model-btn .model-label').textContent = item.dataset.model === '自动' ? '自动' : item.dataset.model.split(' ')[0];
+      closeAllPopups();
+    });
+  });
+
+  // 遮罩点击
+  $('overlay').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAllPopups();
+  });
+
+  document.addEventListener('click', handleDocumentDismissPopups);
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (isPanelPopupOpen()) {
+      closeAllPopups();
+      e.preventDefault();
+    }
+  });
+
+  // 输入框事件
+  $('mainInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (hasMainInputContent()) handleSend();
+    }
+    if (e.key === 'Escape') {
+      if (isPanelPopupOpen()) {
+        closeAllPopups();
+        e.preventDefault();
+        return;
+      }
+      clearInputContent($('mainInput'));
+      lastInput = '';
+      updateSendBtn();
+      autoResizeMainInput();
+    }
+  });
+
+  // 发送按钮
+  $('sendBtn').addEventListener('click', () => {
+    if (hasMainInputContent()) handleSend();
+  });
+
+  $('aiEntryBtn').addEventListener('click', () => {
+    if (!workbookIsBlank) return;
+    openPanelActive();
+    updateSendBtn();
+    requestAnimationFrame(() => autoResizeMainInput());
+    updateGuide('点击「快速建表」→ 展开完整面板（未修改 collapsed）');
+  });
+
+  $('closePanelBtn').addEventListener('click', () => {
+    closeAiPanelFully();
+    updateGuide('已关闭建表面板：未提交内容已清空；可用双击 Ctrl / 功能区「快速建表」再次打开');
+  });
+
+  // 双击 Ctrl：空白时主动唤起面板，不修改 collapsed；非空白不响应
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Control' || !canOpenBuildPanel()) return;
+    ctrlPressCount++;
+    if (ctrlPressCount === 1) {
+      ctrlTimer = setTimeout(() => { ctrlPressCount = 0; }, 500);
+    }
+    if (ctrlPressCount >= 2) {
+      clearTimeout(ctrlTimer);
+      ctrlPressCount = 0;
+      if (lastInput) setInputContent($('mainInput'), lastInput);
+      openPanelActive();
+      updateSendBtn();
+      requestAnimationFrame(() => autoResizeMainInput());
+      updateGuide('双击 Ctrl 主动唤起完整面板（未修改 collapsed）');
+    }
+  });
+
+  // 关闭侧边栏
+  $('closeSidebar').addEventListener('click', () => {
+    $('aiSidebar').classList.remove('show');
+  });
+
+  // 顶栏「WPS 灵犀」：开关侧边栏（与底部建表面板独立，空白工作簿不自动联动）
+  $('toggleSidebarBtn').addEventListener('click', () => {
+    const sidebar = $('aiSidebar');
+    sidebar.classList.toggle('show');
+    if (sidebar.classList.contains('show')) {
+      if (!$('sidebarBody').querySelector('.sb-home') && !$('sidebarBody').querySelector('.chat-msg')) {
+        restoreSidebarHome();
+      }
+      updateGuide('已打开 WPS 灵犀侧边栏 → 可使用「快速建表」等能力卡片');
+    } else {
+      updateGuide('已关闭侧边栏');
+    }
+  });
+
+  // 功能区「快速建表」→ 侧边栏首页 + 预填提示词（不展示底部建表面板）
+  $('menuAiBtn').addEventListener('click', () => {
+    openQuickBuildViaSidebar();
+  });
+
+  // 重置
+  $('guideResetBtn').addEventListener('click', resetDemo);
+
+  $('guideClearBlankBtn').addEventListener('click', () => {
+    if ($('spreadsheetPage').style.display === 'none') return;
+    restoreSidebarHome();
+    clearEntireWorkbook();
+  });
+
+  $('guideClearSheetBtn').addEventListener('click', () => {
+    if ($('spreadsheetPage').style.display === 'none') return;
+    clearActiveSheetContent();
+  });
+
+  $('guideDeleteSheetBtn').addEventListener('click', () => {
+    if ($('spreadsheetPage').style.display === 'none') return;
+    deleteActiveSheet();
+  });
+
+  $('sheetTabs').addEventListener('click', (e) => {
+    const tab = e.target.closest('.sheet-tab');
+    if (!tab || !tab.dataset.sheetId) return;
+    switchSheet(tab.dataset.sheetId);
+  });
+
+  $('addSheetBtn').addEventListener('click', () => {
+    if ($('spreadsheetPage').style.display === 'none') return;
+    addSheet();
+  });
+
+  // 模拟生成失败
+  $('guideSimFailBtn').addEventListener('click', () => {
+    if (!workbookIsBlank || currentState === State.GENERATING) return;
+    const input = getInputPlainText($('mainInput')) || getInputPlainText($('sbInput')) || '帮我做日常收支流水表';
+    simulateGenerationFailure(input);
+  });
+
+  // 侧边栏发送
+  $('sbSend').addEventListener('click', () => {
+    const input = $('sbInput');
+    const text = getInputPlainText(input);
+    if (!text) return;
+    if (workbookIsBlank) {
+      passiveClosePanel();
+      clearInputContent(input);
+      updateSbSendBtn();
+      autoResizeSbInput();
+      updateGuide('侧边栏发起建表 → 被动关闭底部面板');
+      startGeneration(text);
+      return;
+    }
+    handleSecondaryEdit(text);
+    clearInputContent(input);
+    updateSbSendBtn();
+    autoResizeSbInput();
+  });
+  $('sbInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      $('sbSend').click();
+    }
+  });
+
+  $('sidebarBody').addEventListener('click', (e) => {
+    const card = e.target.closest('.sb-feature-card');
+    if (card) onSidebarFeatureClick(card);
+  });
+}
+
+const PANEL_POPUP_ZONE_SELECTOR =
+  '#moreBtnTrigger, #refBtn, #skillBtn, #modelBtn, #morePopup, #refMenu, #skillMenu, #modelMenu';
+
+function isPanelPopupOpen() {
+  return $('morePopup').classList.contains('show') ||
+    $('refMenu').classList.contains('show') ||
+    $('skillMenu').classList.contains('show') ||
+    $('modelMenu').classList.contains('show');
+}
+
+function isInsidePanelPopupZone(target) {
+  return !!(target && target.closest && target.closest(PANEL_POPUP_ZONE_SELECTOR));
+}
+
+/** 点击弹层/模板面板外部时收起 */
+function handleDocumentDismissPopups(e) {
+  const target = e.target;
+  if (isPanelPopupOpen() && !isInsidePanelPopupZone(target)) {
+    closeAllPopups();
+  }
+}
+
+function closeAllPopups() {
+  $('morePopup').classList.remove('show');
+  $('skillMenu').classList.remove('show');
+  $('refMenu').classList.remove('show');
+  $('modelMenu').classList.remove('show');
+  $('overlay').classList.remove('show');
+  const arrow = document.querySelector('.model-btn .arrow');
+  if (arrow) arrow.classList.remove('up');
+}
+
+
+// =============== 侧边栏首页控制 ===============
+const sbHomeHTML = $('sbHome') ? $('sbHome').outerHTML : '';
+
+function clearSidebarBody() {
+  const body = $('sidebarBody');
+  body.innerHTML = '';
+}
+
+function restoreSidebarHome() {
+  const body = $('sidebarBody');
+  body.innerHTML = sbHomeHTML;
+  bindSidebarFeatureCards();
+}
+
+/** 菜单栏「快速建表」：打开侧边栏首页 + 预填建表提示词（不展示底部建表面板） */
+function openQuickBuildViaSidebar() {
+  $('aiSidebar').classList.add('show');
+  sidebarOpenedForGeneration = false;
+  restoreSidebarHome();
+  setInputContent($('sbInput'), QUICK_BUILD_SIDEBAR_PROMPT);
+  $('sbInput').focus();
+  updateSbSendBtn();
+  requestAnimationFrame(() => autoResizeSbInput());
+  passiveClosePanel();
+  updateGuide('「快速建表」→ 侧边栏已打开并填入建表提示词，可修改后发送');
+}
+
+function bindSidebarFeatureCards() {
+  /* 使用事件委托，避免 restore 时重复绑定 */
+}
+
+function onSidebarFeatureClick(card) {
+  const prompt = card.dataset.prompt;
+  if (!prompt) return;
+  setInputContent($('sbInput'), prompt);
+  $('sbInput').focus();
+  updateSbSendBtn();
+  requestAnimationFrame(() => autoResizeSbInput());
+  const nameEl = card.querySelector('.sf-text strong');
+  updateGuide('已选择「' + (nameEl ? nameEl.textContent : '') + '」，可修改后发送');
+}
+
+// =============== 发送逻辑 ===============
+function handleSend() {
+  const userInput = getInputPlainText($('mainInput'));
+  if (!hasMainInputContent()) return;
+
+  syncCurrentSkillFromEditor();
+  const skillForSend = currentSkill;
+  const chipDisplayOrder = enrichChipDisplayOrder(collectEditorChipDisplayOrder());
+  const attachmentSnapshot = panelAttachments.map(a => ({
+    id: a.id, name: a.name, kind: a.kind,
+  }));
+
+  if (currentSkill) {
+    updateGuide('发送建表请求，携带技能：⚡ ' + currentSkill);
+  }
+
+  closeAllPopups();
+  clearInputContent($('mainInput'));
+  clearPanelAttachments();
+  lastInput = '';
+  updateSendBtn();
+  autoResizeMainInput();
+
+  if (isTemplateCloneFromUploadFlow(userInput, skillForSend, attachmentSnapshot)) {
+    startTemplateCloneGeneration(userInput, chipDisplayOrder);
+    return;
+  }
+
+  if (isImageToTableFlow(userInput, skillForSend, attachmentSnapshot)) {
+    startImageToTableGeneration(userInput, chipDisplayOrder);
+    return;
+  }
+
+  if (workbookSource === 'opened-sales' && isSalesAggregationPrompt(userInput)) {
+    startSalesAggregationGeneration(userInput);
+    return;
+  }
+  if (workbookSource === 'opened-sales') {
+    updateGuide('演示请发送：「' + SALES_AGGREGATION_PROMPT.slice(0, 20) + '…」');
+    return;
+  }
+
+  const clarifyScenario = detectClarificationScenario(userInput);
+  if (clarifyScenario) {
+    showClarification(userInput, clarifyScenario);
+    return;
+  }
+
+  startGeneration(userInput);
+}
+
+/** 分镜3：销售表汇总 → 新建 Sheet2 + 固定侧边栏步骤 */
+function startSalesAggregationGeneration(userInput) {
+  enterGeneratingMode();
+
+  clearSidebarBody();
+  const body = $('sidebarBody');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user animate-in';
+  userMsg.innerHTML = '<div class="msg-content">' + escapeHtml(userInput) + '</div>';
+  body.appendChild(userMsg);
+
+  const aiMsg = document.createElement('div');
+  aiMsg.className = 'chat-msg ai animate-in';
+  aiMsg.innerHTML = '<div class="msg-content" id="salesLoadingSteps">' +
+    '<div class="step"><span class="loading loading-pulse">⏳</span> 正在读取当前表格数据</div></div>';
+  body.appendChild(aiMsg);
+  body.scrollTop = body.scrollHeight;
+
+  updateGuide('正在从销售表汇总已回款业绩…');
+
+  const steps = [
+    { delay: 900, html: '<div class="step"><span class="check">✓</span> 正在读取当前表格数据</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 正在汇总计算</div>' },
+    { delay: 1800, html: '<div class="step"><span class="check">✓</span> 正在读取当前表格数据</div>' +
+      '<div class="step"><span class="check">✓</span> 正在汇总计算</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 正在生成新表</div>' },
+  ];
+  steps.forEach(step => {
+    setTimeout(() => {
+      const el = $('salesLoadingSteps');
+      if (el) el.innerHTML = step.html;
+    }, step.delay);
+  });
+
+  setTimeout(() => completeSalesAggregation(userInput), 2800);
+}
+
+/** 上传表格截图 → 图转表（当前表为空则写入当前表） */
+function startImageToTableGeneration(userInput, chipOrder, opts) {
+  const skipInit = opts && opts.skipSidebarInit;
+  if (skipInit) {
+    beginAiEntrySidebarTask();
+  } else {
+    enterGeneratingMode();
+    clearSidebarBody();
+    const body = $('sidebarBody');
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-msg user animate-in';
+    userMsg.innerHTML = buildTemplateFlowUserMsgHtml(userInput, chipOrder);
+    body.appendChild(userMsg);
+  }
+
+  const body = $('sidebarBody');
+
+  const aiMsg = document.createElement('div');
+  aiMsg.className = 'chat-msg ai animate-in';
+  aiMsg.innerHTML = '<div class="msg-content" id="imageToTableSteps">' +
+    '<div style="font-weight:600;margin-bottom:6px;">图转表</div>' +
+    '<div class="step"><span class="loading loading-pulse">⏳</span> 正在识别图片中的表格结构</div></div>';
+  body.appendChild(aiMsg);
+  body.scrollTop = body.scrollHeight;
+
+  const ctx = opts && opts.aiEntryContext;
+  const srcName = ctx ? ctx.sourceFileName : '图片';
+  updateGuide('图转表：正在识别「' + srcName + '」中的表格…');
+
+  const steps = [
+    { delay: 800, html: '<div class="msg-content"><div style="font-weight:600;margin-bottom:6px;">图转表 · ' + escapeHtml(srcName) + '</div>' +
+      '<div class="step"><span class="check">✓</span> 正在识别图片中的表格结构</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 正在提取行列与单元格内容</div></div>' },
+    { delay: 1700, html: '<div class="msg-content"><div style="font-weight:600;margin-bottom:6px;">图转表 · ' + escapeHtml(srcName) + '</div>' +
+      '<div class="step"><span class="check">✓</span> 正在识别图片中的表格结构</div>' +
+      '<div class="step"><span class="check">✓</span> 正在提取行列与单元格内容</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 正在写入当前工作表</div></div>' },
+  ];
+  steps.forEach(step => {
+    setTimeout(() => {
+      const el = $('imageToTableSteps');
+      if (el) el.innerHTML = step.html;
+    }, step.delay);
+  });
+
+  setTimeout(() => completeImageToTableGeneration(opts), 3000);
+}
+
+function completeImageToTableGeneration(opts) {
+  const ctx = (opts && opts.aiEntryContext) || currentAiEntryGenContext;
+  currentAiEntryGenContext = null;
+  const tableData = ctx ? ctx.tableData : cloneTableData(IMAGE_TO_TABLE_SHEET);
+  const sourceName = ctx ? ctx.sourceFileName : '图片';
+  const sheet = getActiveSheet();
+  sheet.tableData = tableData;
+  sheet.tableTypeId = tableData.id;
+  sheet.name = shortenSheetName(tableData.title);
+
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  showHintOnlyOnBlank = false;
+  currentState = null;
+  sidebarOpenedForGeneration = false;
+  revalidateBlankAndPanel('image-to-table-complete');
+
+  const savedName = sheet.name;
+  const highlights = (tableData.highlights || []).map(h =>
+    '<div class="value-item"><span class="value-check">✓</span> ' + escapeHtml(h) + '</div>'
+  ).join('');
+
+  const body = $('sidebarBody');
+  const msgs = body.querySelectorAll('.chat-msg');
+  if (msgs.length > 1) {
+    msgs[1].innerHTML = '<div class="msg-content animate-in">' +
+      '<div style="font-weight:600;margin-bottom:6px;">图转表 · ' + escapeHtml(sourceName) + '</div>' +
+      '<div class="step"><span class="check">✓</span> 正在识别图片中的表格结构</div>' +
+      '<div class="step"><span class="check">✓</span> 正在提取行列与单元格内容</div>' +
+      '<div class="step"><span class="check">✓</span> 正在写入当前工作表</div>' +
+      '<div style="margin-top:10px;font-size:13px;color:#333;line-height:1.6;">已根据「' + escapeHtml(sourceName) +
+      '」生成「' + escapeHtml(tableData.title) + '」，已写入当前工作表「' + escapeHtml(savedName) + '」</div>' +
+      highlights + '</div>';
+  }
+  body.scrollTop = body.scrollHeight;
+  $('sbInput').placeholder = '继续输入，AI帮你优化「' + tableData.title + '」…';
+  updateGuide('图转表完成：已根据「' + sourceName + '」生成「' + tableData.title + '」');
+}
+
+/** 参考上传文件 → 生成同款周报（当前表为空则写入当前表） */
+function startTemplateCloneGeneration(userInput, chipOrder, opts) {
+  const skipInit = opts && opts.skipSidebarInit;
+  if (skipInit) {
+    beginAiEntrySidebarTask();
+  } else {
+    enterGeneratingMode();
+    clearSidebarBody();
+    const body = $('sidebarBody');
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-msg user animate-in';
+    userMsg.innerHTML = buildTemplateFlowUserMsgHtml(userInput, chipOrder);
+    body.appendChild(userMsg);
+  }
+
+  const body = $('sidebarBody');
+  const ctx = opts && opts.aiEntryContext;
+  const isExcelInfer = ctx && ctx.route === 'EXECUTE_EXCEL_INFER';
+
+  const aiMsg = document.createElement('div');
+  aiMsg.className = 'chat-msg ai animate-in';
+  aiMsg.innerHTML = '<div class="msg-content" id="templateCloneSteps">' +
+    (isExcelInfer
+      ? '<div style="font-weight:600;margin-bottom:6px;">多表格分析</div>' +
+        '<div class="step"><span class="loading loading-pulse">⏳</span> 正在分析表头结构与字段类型</div>'
+      : '<div class="step"><span class="loading loading-pulse">⏳</span> 正在解析参考文件</div>') +
+    '</div>';
+  body.appendChild(aiMsg);
+  body.scrollTop = body.scrollHeight;
+
+  const srcName = ctx ? ctx.sourceFileName : '参考文件';
+  const taskTitle = ctx ? ctx.taskLabel : '表格';
+  const excelNames = isExcelInfer && ctx.files
+    ? ctx.files.filter(f => f.kind === 'excel').map(f => f.name).join('、')
+    : '';
+  updateGuide(isExcelInfer
+    ? '正在分析多个表格文件的表结构同构/异构…'
+    : '正在解析「' + srcName + '」并生成「' + taskTitle + '」…');
+
+  const steps = isExcelInfer ? [
+    { delay: 900, html: '<div class="step"><span class="check">✓</span> 已读取「' + escapeHtml(excelNames) + '」</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 分析表头结构与字段类型</div>' },
+    { delay: 1800, html: '<div class="step"><span class="check">✓</span> 已读取「' + escapeHtml(excelNames) + '」</div>' +
+      '<div class="step"><span class="check">✓</span> 分析表头结构与字段类型</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 判断数据同构/异构并确定合并或拆分策略</div>' },
+    { delay: 2600, html: '<div class="step"><span class="check">✓</span> 已读取「' + escapeHtml(excelNames) + '」</div>' +
+      '<div class="step"><span class="check">✓</span> 分析表头结构与字段类型</div>' +
+      '<div class="step"><span class="check">✓</span> 判断为同构数据，合并至同一工作表</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 写入规范化表格</div>' },
+  ] : [
+    { delay: 900, html: '<div class="step"><span class="check">✓</span> 正在解析「' + escapeHtml(srcName) + '」</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 提取表结构和格式</div>' },
+    { delay: 1800, html: '<div class="step"><span class="check">✓</span> 正在解析「' + escapeHtml(srcName) + '」</div>' +
+      '<div class="step"><span class="check">✓</span> 提取表结构和格式</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 生成「' + escapeHtml(taskTitle) + '」</div>' },
+    { delay: 2600, html: '<div class="step"><span class="check">✓</span> 正在解析「' + escapeHtml(srcName) + '」</div>' +
+      '<div class="step"><span class="check">✓</span> 提取表结构和格式</div>' +
+      '<div class="step"><span class="check">✓</span> 生成「' + escapeHtml(taskTitle) + '」</div>' +
+      '<div class="step"><span class="loading loading-pulse">⏳</span> 填充示例数据</div>' },
+  ];
+  steps.forEach(step => {
+    setTimeout(() => {
+      const el = $('templateCloneSteps');
+      if (el) el.innerHTML = step.html;
+    }, step.delay);
+  });
+
+  setTimeout(() => completeTemplateCloneGeneration(opts), 3400);
+}
+
+function completeTemplateCloneGeneration(opts) {
+  const ctx = (opts && opts.aiEntryContext) || currentAiEntryGenContext;
+  currentAiEntryGenContext = null;
+  const tableData = ctx ? ctx.tableData : cloneTableData(WEEKLY_REPORT_CLONE_SHEET);
+  const sourceName = ctx ? ctx.sourceFileName : '参考文件';
+  const isExcelInfer = ctx && ctx.route === 'EXECUTE_EXCEL_INFER';
+  const excelNames = isExcelInfer && ctx.files
+    ? ctx.files.filter(f => f.kind === 'excel').map(f => f.name).join('、')
+    : '';
+  const sheet = getActiveSheet();
+  sheet.tableData = tableData;
+  sheet.tableTypeId = tableData.id;
+  sheet.name = shortenSheetName(tableData.title);
+
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  showHintOnlyOnBlank = false;
+  currentState = null;
+  sidebarOpenedForGeneration = false;
+  revalidateBlankAndPanel('template-clone-complete');
+
+  const savedName = sheet.name;
+  const body = $('sidebarBody');
+  const msgs = body.querySelectorAll('.chat-msg');
+  const highlights = (tableData.highlights || []).map(h =>
+    '<div class="value-item"><span class="value-check">✓</span> ' + escapeHtml(h) + '</div>'
+  ).join('');
+
+  if (msgs.length > 1) {
+    if (isExcelInfer) {
+      msgs[1].innerHTML = '<div class="msg-content animate-in">' +
+        '<div style="font-weight:600;margin-bottom:6px;">多表格分析 · ' + escapeHtml(excelNames) + '</div>' +
+        '<div class="step"><span class="check">✓</span> 分析表头结构与字段类型</div>' +
+        '<div class="step"><span class="check">✓</span> 判断为同构数据，合并至同一工作表</div>' +
+        '<div class="step"><span class="check">✓</span> 写入规范化表格</div>' +
+        '<div style="margin-top:10px;font-size:13px;color:#333;line-height:1.6;">已分析「' + escapeHtml(excelNames) +
+        '」并完成合并，生成「' + escapeHtml(tableData.title) + '」，已写入「' + escapeHtml(savedName) + '」</div>' +
+        highlights + '</div>';
+    } else {
+      msgs[1].innerHTML = '<div class="msg-content animate-in">' +
+        '<div class="step"><span class="check">✓</span> 正在解析「' + escapeHtml(sourceName) + '」</div>' +
+        '<div class="step"><span class="check">✓</span> 提取表结构和格式</div>' +
+        '<div class="step"><span class="check">✓</span> 生成「' + escapeHtml(tableData.title) + '」</div>' +
+        '<div class="step"><span class="check">✓</span> 填充示例数据</div>' +
+        '<div style="margin-top:10px;font-size:13px;color:#333;line-height:1.6;">已根据「' + escapeHtml(sourceName) +
+        '」生成「' + escapeHtml(tableData.title) + '」，已写入当前工作表「' + escapeHtml(savedName) + '」</div>' +
+        highlights + '</div>';
+    }
+  }
+  body.scrollTop = body.scrollHeight;
+  $('sbInput').placeholder = '继续输入，AI帮你优化「' + tableData.title + '」…';
+  updateGuide(isExcelInfer
+    ? '多表格分析完成：已合并「' + excelNames + '」→「' + tableData.title + '」'
+    : '已根据「' + sourceName + '」生成「' + tableData.title + '」');
+}
+
+function completeSalesAggregation(userInput) {
+  let perfSheet = sheets.find(s => s.tableTypeId === 'performance-summary');
+  if (!perfSheet) {
+    sheetIdCounter += 1;
+    perfSheet = {
+      id: 's' + sheetIdCounter,
+      name: 'Sheet2',
+      tableData: PERFORMANCE_SUMMARY_SHEET,
+      tableTypeId: 'performance-summary',
+    };
+    sheets.push(perfSheet);
+  } else {
+    perfSheet.tableData = PERFORMANCE_SUMMARY_SHEET;
+  }
+  activeSheetId = perfSheet.id;
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+
+  currentState = null;
+  sidebarOpenedForGeneration = false;
+  revalidateBlankAndPanel('sales-aggregation-complete');
+
+  const body = $('sidebarBody');
+  const msgs = body.querySelectorAll('.chat-msg');
+  if (msgs.length > 1) {
+    msgs[1].innerHTML = '<div class="msg-content animate-in">' +
+      '<div class="step"><span class="check">✓</span> 正在读取当前表格数据</div>' +
+      '<div class="step"><span class="check">✓</span> 正在汇总计算</div>' +
+      '<div class="step"><span class="check">✓</span> 正在生成新表</div>' +
+      '<div style="margin-top:10px;font-size:13px;color:#333;line-height:1.6;">已为你生成业绩统计表，保存在Sheet2中</div></div>';
+  }
+  body.scrollTop = body.scrollHeight;
+  $('sbInput').placeholder = '继续输入，AI帮你优化「业绩统计表」…';
+  updateGuide('业绩统计表已写入 Sheet2；可切回 Sheet1 查看原始销售数据');
+}
+
+function startGeneration(userInput) {
+  enterGeneratingMode();
+
+  clearSidebarBody();
+  const body = $('sidebarBody');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user animate-in';
+  userMsg.innerHTML = '<div class="msg-content">' + escapeHtml(userInput) + '</div>';
+  body.appendChild(userMsg);
+
+  const tablePreview = resolveTableFromPrompt(userInput);
+  const aiMsg = document.createElement('div');
+  aiMsg.className = 'chat-msg ai animate-in';
+  aiMsg.innerHTML = `<div class="msg-content" id="loadingSteps">
+    <div class="step"><span class="loading loading-pulse">⏳</span> 理解需求：${escapeHtml(tablePreview.title)}...</div>
+  </div>`;
+  body.appendChild(aiMsg);
+
+  updateGuide('AI正在生成「' + tablePreview.title + '」，请稍候...');
+
+  // 模拟分步加载
+  const steps = [
+    { delay: 800, html: '<div class="step"><span class="check">✓</span> 理解需求</div><div class="step"><span class="loading loading-pulse">⏳</span> 匹配建表规则库...</div>' },
+    { delay: 1600, html: '<div class="step"><span class="check">✓</span> 理解需求</div><div class="step"><span class="check">✓</span> 匹配建表规则库</div><div class="step"><span class="loading loading-pulse">⏳</span> 生成公式逻辑...</div>' },
+    { delay: 2400, html: '<div class="step"><span class="check">✓</span> 理解需求</div><div class="step"><span class="check">✓</span> 匹配建表规则库</div><div class="step"><span class="check">✓</span> 生成公式逻辑</div><div class="step"><span class="loading loading-pulse">⏳</span> 正在创建表格画布内容...</div>' },
+  ];
+
+  steps.forEach(step => {
+    setTimeout(() => {
+      const el = $('loadingSteps');
+      if (el) el.innerHTML = step.html;
+    }, step.delay);
+  });
+
+  // 生成完成
+  setTimeout(() => {
+    completeGeneration(userInput);
+  }, 3500);
+}
+
+function completeGeneration(userInput) {
+  const tableData = resolveTableFromPrompt(userInput);
+  const sheet = getActiveSheet();
+  sheet.tableData = tableData;
+  sheet.tableTypeId = tableData.id;
+  sheet.name = shortenSheetName(tableData.title);
+
+  refreshActiveSheetGrid();
+  renderSheetTabs();
+  showHintOnlyOnBlank = false;
+  sidebarOpenedForGeneration = false;
+  revalidateBlankAndPanel('generation-complete');
+
+  const body = $('sidebarBody');
+  const msgs = body.querySelectorAll('.chat-msg');
+  if (msgs.length > 1) {
+    msgs[1].innerHTML = buildCompletionSidebarHtml(tableData);
+  }
+  body.scrollTop = body.scrollHeight;
+
+  $('sbInput').placeholder = '继续输入，AI帮你优化「' + tableData.title + '」…';
+  updateGuide('「' + tableData.title + '」已生成！侧边栏与左侧画布已与你的指令对齐');
+}
+
+// =============== 澄清流程 ===============
+function showClarification(userInput, scenario) {
+  enterGeneratingMode();
+
+  clearSidebarBody();
+  const body = $('sidebarBody');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user animate-in';
+  userMsg.innerHTML = '<div class="msg-content">' + escapeHtml(userInput) + '</div>';
+  body.appendChild(userMsg);
+
+  const optionsHtml = scenario.options.map((opt, i) =>
+    `<div class="cc-option" data-idx="${i}"><div class="radio"></div>${escapeHtml(opt.label)}</div>`
+  ).join('');
+
+  setTimeout(() => {
+    const clarifyMsg = document.createElement('div');
+    clarifyMsg.className = 'chat-msg ai animate-in';
+    clarifyMsg.innerHTML = `<div class="msg-content">
+      <div class="clarify-card">
+        <div class="cc-title">📋 ${escapeHtml(scenario.title)}</div>
+        <div class="cc-subtitle">${escapeHtml(scenario.subtitle)}</div>
+        ${optionsHtml}
+        <button class="cc-confirm" type="button" disabled>确认生成</button>
+      </div>
+    </div>`;
+    body.appendChild(clarifyMsg);
+    body.scrollTop = body.scrollHeight;
+    updateGuide('核心业务实体不明确 → 请选项后确认生成（非核心信息将用默认值）');
+
+    let selectedIdx = null;
+    clarifyMsg.querySelectorAll('.cc-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        clarifyMsg.querySelectorAll('.cc-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selectedIdx = parseInt(opt.dataset.idx, 10);
+        clarifyMsg.querySelector('.cc-confirm').disabled = false;
+      });
+    });
+
+    const confirmBtn = clarifyMsg.querySelector('.cc-confirm');
+    confirmBtn.addEventListener('click', () => {
+      if (selectedIdx == null || !scenario.options[selectedIdx]) return;
+      const chosen = scenario.options[selectedIdx];
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '生成中...';
+      const merged = userInput + '。' + chosen.suffix;
+      setTimeout(() => startGeneration(merged), 500);
+    });
+  }, 800);
+}
+
+// =============== 生成失败 ===============
+function simulateGenerationFailure(userInput) {
+  clearInputContent($('mainInput'));
+  clearPanelAttachments();
+  lastInput = '';
+  updateSendBtn();
+  autoResizeMainInput();
+  enterGeneratingMode();
+
+  clearSidebarBody();
+  const body = $('sidebarBody');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user animate-in';
+  userMsg.innerHTML = `<div class="msg-content">${userInput}</div>`;
+  body.appendChild(userMsg);
+
+  const aiMsg = document.createElement('div');
+  aiMsg.className = 'chat-msg ai animate-in';
+  aiMsg.innerHTML = `<div class="msg-content" id="failLoadingSteps">
+    <div class="step"><span class="loading loading-pulse">⏳</span> 理解需求...</div>
+  </div>`;
+  body.appendChild(aiMsg);
+
+  updateGuide('模拟生成失败场景...');
+
+  setTimeout(() => {
+    const el = $('failLoadingSteps');
+    if (el) el.innerHTML = '<div class="step"><span class="check">✓</span> 理解需求</div><div class="step"><span class="loading loading-pulse">⏳</span> 匹配建表规则库...</div>';
+  }, 800);
+
+  setTimeout(() => {
+    const el = $('failLoadingSteps');
+    if (el) el.innerHTML = `<div class="step"><span class="check">✓</span> 理解需求</div>
+    <div class="step" style="color:#e53935;"><span>✕</span> 生成失败</div>
+    <div class="error-msg" style="color:#e53935;margin-top:8px;font-size:12px;">网络连接中断，请重试</div>`;
+
+    updateGuide('生成失败！系统判定工作簿仍为空白，面板将自动恢复...');
+
+    setTimeout(() => {
+      finishGeneratingMode();
+      currentState = null;
+      revalidateBlankAndPanel('generation-failed');
+      updateGuide('生成失败：仍为空白 → ' + panelStateLabel() + '（可立即重试）');
+    }, 2000);
+  }, 2000);
+}
+
+// =============== 二次编辑 ===============
+function handleSecondaryEdit(userInput) {
+  const body = $('sidebarBody');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user animate-in';
+  userMsg.innerHTML = `<div class="msg-content">${userInput}</div>`;
+  body.appendChild(userMsg);
+
+  const loadingMsg = document.createElement('div');
+  loadingMsg.className = 'chat-msg ai animate-in';
+  loadingMsg.innerHTML = `<div class="msg-content"><span class="loading-pulse">⏳ 正在处理...</span></div>`;
+  body.appendChild(loadingMsg);
+  body.scrollTop = body.scrollHeight;
+
+  setTimeout(() => {
+    loadingMsg.innerHTML = `<div class="msg-content animate-in">
+      <div style="font-weight:500;margin-bottom:6px;">已完成修改 ✓</div>
+      <div style="font-size:12px;color:#666;line-height:1.6;">已根据你的要求「${userInput}」更新了表格。新增的字段/修改已同步到画布中。</div>
+    </div>`;
+    body.scrollTop = body.scrollHeight;
+    updateGuide('表格已更新！继续在侧边栏输入新的修改需求');
+  }, 1500);
+}
+
+// =============== 重置 ===============
+function resetDemo() {
+  $('newPage').style.display = '';
+  $('spreadsheetPage').style.display = 'none';
+  $('aiSidebar').classList.remove('show');
+  clearInputContent($('mainInput'));
+  clearPanelAttachments();
+  autoResizeMainInput();
+  restoreSidebarHome();
+  lastInput = '';
+  currentSkill = '';
+  workbookCollapsed = false;
+  panelDismissed = false;
+  showHintOnlyOnBlank = false;
+  blankCardEntryFlow = false;
+  blankCardPanelSuppressed = false;
+  aiFileEntryFlow = false;
+  currentAiEntryGenContext = null;
+  workbookSource = null;
+  sidebarOpenedForGeneration = false;
+  currentState = null;
+  closeAllPopups();
+  document.querySelector('.model-btn .model-label').textContent = '自动';
+  document.querySelectorAll('.mm-item').forEach(i => i.classList.remove('active'));
+  document.querySelector('.mm-item[data-model="自动"]').classList.add('active');
+  updateSendBtn();
+  createDefaultWorkbook();
+  revalidateBlankAndPanel('reset');
+  clearInputContent($('sbInput'));
+  updateSbSendBtn();
+  autoResizeSbInput();
+  passiveClosePanel();
+  updateGuide('空白页：上传图片→图转表；上传xlsx+「基于模板」+同款指令；打开文件：销售汇总');
+}
+
+// =============== 表格技能菜单（Cowork 交互） ===============
+function renderSkillMenu() {
+  const list = $('skillList');
+  if (!list) return;
+  list.innerHTML = TABLE_SKILLS.map(s =>
+    '<div class="skill-item" data-skill="' + escapeHtml(s.name) + '">' +
+    '<span class="skill-badge ' + s.color + '">' + escapeHtml(s.badge) + '</span> ' +
+    escapeHtml(s.name) + '</div>'
+  ).join('');
+}
+
+function selectTableSkill(name) {
+  if (!name) return;
+  closeAllPopups();
+  insertSkillChip(name);
+  updateGuide('已选表格技能「' + name + '」，可在芯片后继续输入文字');
+}
+
+function filterSkills(query) {
+  const menu = $('skillMenu');
+  if (!menu) return;
+  const items = menu.querySelectorAll('.skill-item');
+  let visible = 0;
+  items.forEach(item => {
+    const name = item.dataset.skill || '';
+    const show = !query || name.includes(query);
+    item.style.display = show ? 'flex' : 'none';
+    if (show) visible++;
+  });
+  menu.classList.toggle('is-empty', query.length > 0 && visible === 0);
+}
+
+// =============== 启动 ===============
+init();
+</script>
+
+</body>
+</html>
