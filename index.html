@@ -3280,7 +3280,13 @@ function bindFieldChipInteractions(editor, onResize) {
 
   editor.addEventListener('mousedown', (e) => {
     const chip = getFieldChipFromNode(e.target, editor);
-    if (!chip) return;
+    if (!chip) {
+      editor.querySelectorAll('.field-chip.is-focused').forEach(c => {
+        c.classList.remove('is-focused');
+        finalizeFieldChipOnBlur(c);
+      });
+      return;
+    }
     e.stopPropagation();
     clearFieldChipFocus(editor);
     chip.classList.add('is-focused');
@@ -3318,11 +3324,6 @@ function bindFieldChipInteractions(editor, onResize) {
       chip.classList.add('is-focused');
       if (isFieldChipShowingPlaceholder(chip)) activateFieldChipForEdit(chip);
       return;
-    }
-    const pending = editor.querySelector('.field-chip.is-focused');
-    if (pending && e.target === editor) {
-      const inner = getFieldChipInner(pending);
-      if (inner) requestAnimationFrame(() => focusFieldChipInner(pending, isFieldChipShowingPlaceholder(pending)));
     }
   });
 
