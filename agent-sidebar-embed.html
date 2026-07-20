@@ -827,9 +827,13 @@
   }
   #atPanel .at-sub { font-size: 11px; color: #999; margin-top: 1px; }
   #atPanel .at-enter {
-    color: #bbb; font-size: 14px; flex-shrink: 0; margin-right: 2px;
+    color: #bbb; font-size: 14px; flex-shrink: 0;
+    width: 28px; height: 28px; margin-right: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; cursor: pointer;
   }
   #atPanel .at-item:hover .at-enter { color: #888; }
+  #atPanel .at-enter:hover { background: rgba(0,0,0,.06); color: #555; }
   #atPanel .at-return {
     color: #bbb; font-size: 13px; flex-shrink: 0; opacity: 0;
   }
@@ -2133,24 +2137,41 @@
             '<div class="at-name-main">当前工作表</div>' +
             '<div class="at-name-sheet">' + sheetName + "</div>" +
           "</span>" +
-          '<span class="at-enter">›</span>';
+          '<span class="at-enter" role="button" tabindex="-1" aria-label="选择其他工作表" title="选择其他工作表">›</span>';
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // 右侧 ›：进入本簿工作表二级；点主体：直接挂载当前激活表
+          if (e.target.closest(".at-enter")) {
+            atView = it.drillTo || "sheets";
+            requestAnimationFrame(() => {
+              renderAtPanel();
+              atPanel.classList.add("show");
+            });
+            return;
+          }
+          addAtChip({
+            kind: "sheet",
+            name: "工作表 · " + sheetName,
+          });
+        });
       } else {
         btn.innerHTML =
           '<span class="at-icon ' + iconCls + '">' + iconText + "</span>" +
           '<span class="at-meta"><div class="at-name">' + it.name + "</div></span>" +
           '<span class="at-enter">›</span>';
-      }
-      btn.addEventListener("click", (e) => {
-        // 阻止冒泡：清空列表会销毁当前按钮，否则 document click 会误关面板
-        e.preventDefault();
-        e.stopPropagation();
-        const next = it.drillTo;
-        atView = next;
-        requestAnimationFrame(() => {
-          renderAtPanel();
-          atPanel.classList.add("show");
+        btn.addEventListener("click", (e) => {
+          // 阻止冒泡：清空列表会销毁当前按钮，否则 document click 会误关面板
+          e.preventDefault();
+          e.stopPropagation();
+          const next = it.drillTo;
+          atView = next;
+          requestAnimationFrame(() => {
+            renderAtPanel();
+            atPanel.classList.add("show");
+          });
         });
-      });
+      }
     } else if (it.kind === "sheet") {
       const sheetName = it.sheetName || getActiveSheetName();
       const isActive = !!it.isActive;
