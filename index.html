@@ -1555,7 +1555,7 @@ body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; background: #
       <iframe
         id="agentSidebarFrame"
         class="agent-sidebar-frame"
-        src="agent-sidebar-embed.html?embed=1&v=76"
+        src="agent-sidebar-embed.html?embed=1&v=77"
         title="WPS 灵犀侧栏（完整 Agent Demo）"
         allow="clipboard-read; clipboard-write"
       ></iframe>
@@ -4144,26 +4144,36 @@ function skillChipHtml(name) {
     '<span class="skill-chip-remove" role="button" tabindex="-1" aria-label="移除技能">×</span></span>';
 }
 
+/** 记录各混合输入框最后一次光标（失焦选文件/开菜单后仍可按原位插入） */
+const editorSavedRanges = new WeakMap();
+
+function saveEditorCaret(el) {
+  if (!el) return;
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  if (el.contains(range.commonAncestorContainer)) {
+    editorSavedRanges.set(el, range.cloneRange());
+  }
+}
+
+function saveMainInputCaretIfInEditor() {
+  saveEditorCaret($('mainInput'));
+}
+
 function placeCaretAfter(node) {
+  if (!node || !node.parentNode) return;
   const range = document.createRange();
   range.setStartAfter(node);
   range.collapse(true);
   const sel = window.getSelection();
   sel.removeAllRanges();
   sel.addRange(range);
-}
-
-/** 记录 mainInput 内最后一次光标位置（失焦选文件/开菜单后仍可插入） */
-let mainInputSavedRange = null;
-
-function saveMainInputCaretIfInEditor() {
-  const el = $('mainInput');
-  if (!el) return;
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  if (el.contains(range.commonAncestorContainer)) {
-    mainInputSavedRange = range.cloneRange();
+  const editor = node.parentNode.closest
+    ? (node.parentNode.closest('[contenteditable="true"]') || node.parentNode)
+    : node.parentNode;
+  if (editor && editor.isContentEditable) {
+    editorSavedRanges.set(editor, range.cloneRange());
   }
 }
 
@@ -4180,7 +4190,7 @@ function normalizeChipInsertRange(el, range) {
     return r;
   }
 
-  const inlineChip = container.closest('.attach-chip, .skill-chip');
+  const inlineChip = container.closest('.attach-chip, .skill-chip, .chip');
   if (inlineChip && el.contains(inlineChip)) {
     const r = document.createRange();
     r.setStartAfter(inlineChip);
@@ -4191,39 +4201,49 @@ function normalizeChipInsertRange(el, range) {
   return range;
 }
 
-function getMainInputInsertRange(el) {
-  // 优先使用显式保存的光标位置（不受 el.focus() 默认行为影响）
-  if (mainInputSavedRange && el.contains(mainInputSavedRange.commonAncestorContainer)) {
-    return normalizeChipInsertRange(el, mainInputSavedRange.cloneRange());
+function getEditorInsertRange(el) {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount) {
+    const live = sel.getRangeAt(0);
+    if (el.contains(live.commonAncestorContainer)) {
+      return normalizeChipInsertRange(el, live.cloneRange());
+    }
   }
-  return null;
+  const saved = editorSavedRanges.get(el);
+  if (saved) {
+    try {
+      if (el.contains(saved.commonAncestorContainer)) {
+        return normalizeChipInsertRange(el, saved.cloneRange());
+      }
+    } catch (e) { /* detached */ }
+  }
+  const end = document.createRange();
+  end.selectNodeContents(el);
+  end.collapse(false);
+  return end;
 }
 
-/** 在光标处插入附件/技能芯片；无有效光标时追加到末尾 */
+/** 兼容旧调用名 */
+function getMainInputInsertRange(el) {
+  return getEditorInsertRange(el);
+}
+
+/** 在光标处插入附件/技能芯片；插完后光标落在内容后。先落光标再 focus，避免抢焦点。 */
 function insertInlineChipAtCaret(el, chip) {
   if (!el || !chip) return;
+
+  let range = getEditorInsertRange(el);
+  range.collapse(true);
+
+  const spacer = document.createTextNode('\u200B');
+  const frag = document.createDocumentFragment();
+  frag.appendChild(chip);
+  frag.appendChild(spacer);
+  range.insertNode(frag);
+
+  placeCaretAfter(spacer);
   el.focus();
-
-  const tail = document.createTextNode('\u00a0');
-  const range = getMainInputInsertRange(el);
-
-  if (range) {
-    range.collapse(true);
-    range.insertNode(tail);
-    range.insertNode(chip);
-    mainInputSavedRange = document.createRange();
-    mainInputSavedRange.setStartAfter(tail);
-    mainInputSavedRange.collapse(true);
-    placeCaretAfter(tail);
-    return;
-  }
-
-  el.appendChild(chip);
-  el.appendChild(tail);
-  mainInputSavedRange = document.createRange();
-  mainInputSavedRange.setStartAfter(tail);
-  mainInputSavedRange.collapse(true);
-  placeCaretAfter(tail);
+  placeCaretAfter(spacer);
 }
 
 function buildSkillChipElement(name) {
@@ -4263,7 +4283,7 @@ function setInputContent(el, text) {
   }
   if (el.id === 'mainInput') {
     clearPanelAttachments();
-    mainInputSavedRange = null;
+    editorSavedRanges.delete(el);
   }
   if (!text) {
     el.innerHTML = '';
@@ -4305,7 +4325,7 @@ function clearInputContent(el) {
     clearPanelAttachments();
     el.innerHTML = '';
     currentSkill = '';
-    mainInputSavedRange = null;
+    editorSavedRanges.delete(el);
     syncMainInputPlaceholder();
   } else {
     el.innerHTML = '';
@@ -4665,9 +4685,13 @@ function bindEvents() {
   });
   // 侧栏已改为 textarea Agent 输入壳，不再走 contenteditable setupPromptEditor
 
-  document.addEventListener('selectionchange', saveMainInputCaretIfInEditor);
+  document.addEventListener('selectionchange', () => {
+    saveEditorCaret($('mainInput'));
+    saveEditorCaret($('sbInput'));
+  });
   $('mainInput').addEventListener('keyup', saveMainInputCaretIfInEditor);
   $('mainInput').addEventListener('mouseup', saveMainInputCaretIfInEditor);
+  $('mainInput').addEventListener('blur', saveMainInputCaretIfInEditor);
 
   $('mainInput').addEventListener('input', () => {
     lastInput = getInputPlainText($('mainInput'));
@@ -4712,7 +4736,11 @@ function bindEvents() {
     },
   });
   // 侧栏对话态跟输：混合输入（与建表/空态侧栏同构）
+  $('sbInput').addEventListener('keyup', () => saveEditorCaret($('sbInput')));
+  $('sbInput').addEventListener('mouseup', () => saveEditorCaret($('sbInput')));
+  $('sbInput').addEventListener('blur', () => saveEditorCaret($('sbInput')));
   $('sbInput').addEventListener('input', () => {
+    saveEditorCaret($('sbInput'));
     syncSbInputPlaceholder();
     updateSbSendBtn();
     autoResizeSbInput();

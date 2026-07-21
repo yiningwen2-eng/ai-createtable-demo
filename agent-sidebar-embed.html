@@ -1385,14 +1385,12 @@
         showToast("该选区已添加");
         return;
       }
-      chips.push({
+      pushContextChip({
         id: "sel-" + Date.now(),
         type: "selection",
         label: label,
         meta: (payload && payload.meta) || { sheet: getActiveSheetName(), range: label },
       });
-      renderChips();
-      updateSendState();
       showToast("已添加选区：" + label);
     },
   };
@@ -1756,87 +1754,81 @@
     return (div.textContent || "").replace(/\u00A0/g, " ");
   }
 
-  function placeCaretAtEnd() {
-    userInput.focus();
-    const range = document.createRange();
-    range.selectNodeContents(userInput);
-    range.collapse(false);
+  let inputSavedRange = null;
+
+  function saveInputCaret() {
+    if (!userInput) return;
     const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    if (!sel || !sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    if (userInput.contains(range.commonAncestorContainer)) {
+      inputSavedRange = range.cloneRange();
+    }
   }
 
   function placeCaretAfter(node) {
+    if (!node || !node.parentNode) return;
     const range = document.createRange();
     range.setStartAfter(node);
     range.collapse(true);
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
+    inputSavedRange = range.cloneRange();
   }
 
-  function stripTrailingTriggerInEditor(ch) {
-    const re = ch === "@" ? /(^|\s)@[^\s]*$/ : /(^|\s)\/[^\s]*$/;
-    const walker = document.createTreeWalker(userInput, NodeFilter.SHOW_TEXT, null);
-    let last = null;
-    while (walker.nextNode()) last = walker.currentNode;
-    if (!last) return;
-    const t = last.textContent || "";
-    const next = t.replace(re, "$1").replace(/\s+$/, "");
-    if (next !== t) last.textContent = next;
-    syncInputPlaceholder();
-  }
-
-  function setInputTextOnly(text) {
-    // 保留芯片，只替换纯文本（用于 prompt 填入等）
-    userInput.querySelectorAll(".chip, .skill-chip").forEach((n) => n.remove());
-    chips = [];
-    userInput.textContent = text || "";
-    syncInputPlaceholder();
-    updateSendState();
-  }
-
-  function buildSkillChipEl(name) {
-    const el = document.createElement("span");
-    el.className = "skill-chip";
-    el.contentEditable = "false";
-    el.dataset.skill = name;
-    el.innerHTML =
-      SKILL_BOLT_SVG +
-      '<span class="skill-chip-text">' + name + "</span>" +
-      '<button class="skill-chip-remove" type="button" aria-label="移除技能">×</button>';
-    el.querySelector(".skill-chip-remove").addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      el.remove();
-      syncInputPlaceholder();
-      updateSendState();
-      showToast("已移除技能");
-    });
-    return el;
-  }
-
-  function insertInlineNode(node) {
-    userInput.focus();
+  function getInputInsertRange() {
     const sel = window.getSelection();
-    let range = null;
-    if (sel && sel.rangeCount && userInput.contains(sel.anchorNode)) {
-      range = sel.getRangeAt(0);
+    if (sel && sel.rangeCount) {
+      const live = sel.getRangeAt(0);
+      if (userInput.contains(live.commonAncestorContainer)) {
+        return live.cloneRange();
+      }
     }
-    if (range) {
-      range.deleteContents();
-      range.insertNode(node);
-      placeCaretAfter(node);
-    } else {
-      const chipsEl = userInput.querySelectorAll(".chip, .skill-chip");
-      if (chipsEl.length) chipsEl[chipsEl.length - 1].after(node);
-      else userInput.appendChild(node);
-      placeCaretAfter(node);
+    if (inputSavedRange) {
+      try {
+        if (userInput.contains(inputSavedRange.commonAncestorContainer)) {
+          return inputSavedRange.cloneRange();
+        }
+      } catch (e) { /* range detached */ }
     }
-    // 芯片后补零宽空格方便继续输入
-    const zw = document.createTextNode("\u200B");
-    node.after(zw);
-    placeCaretAfter(zw);
+    const end = document.createRange();
+    end.selectNodeContents(userInput);
+    end.collapse(false);
+    return end;
+  }
+
+  function normalizeInsertRange(range) {
+    let container = range.commonAncestorContainer;
+    if (container.nodeType === 3) container = container.parentNode;
+    if (container && container.closest) {
+      const chip = container.closest(".chip, .skill-chip");
+      if (chip && userInput.contains(chip)) {
+        const r = document.createRange();
+        r.setStartAfter(chip);
+        r.collapse(true);
+        return r;
+      }
+    }
+    return range;
+  }
+
+  /** 在光标处插入节点；插完后光标落在内容后。不先 focus，避免光标被打回开头。 */
+  function insertInlineNode(node) {
+    if (!userInput || !node) return;
+    let range = normalizeInsertRange(getInputInsertRange());
+    range.collapse(true);
+
+    const spacer = document.createTextNode("\u200B");
+    const frag = document.createDocumentFragment();
+    frag.appendChild(node);
+    frag.appendChild(spacer);
+    range.insertNode(frag);
+
+    // 先设光标再 focus，避免抢焦点把插入点重置到开头
+    placeCaretAfter(spacer);
+    userInput.focus();
+    placeCaretAfter(spacer);
     syncInputPlaceholder();
     updateSendState();
   }
@@ -1846,7 +1838,6 @@
     insertInlineNode(buildSkillChipEl(name));
     showToast("已选择技能：" + name);
   }
-
 
   function buildContextChipEl(chip) {
     const el = document.createElement("span");
@@ -1883,20 +1874,20 @@
   }
 
   function renderChips() {
-    // 增量同步：不整表重建，避免清掉混合区内的文本
-    const existing = new Map();
-    userInput.querySelectorAll(".chip[data-id]").forEach((el) => existing.set(el.dataset.id, el));
+    // 仅同步删除：新增芯片由 pushContextChip / insertInlineNode 在光标处插入
     const keep = new Set(chips.map((c) => c.id));
-    existing.forEach((el, id) => {
-      if (!keep.has(id)) el.remove();
-    });
-    chips.forEach((chip) => {
-      if (!existing.has(chip.id)) {
-        insertInlineNode(buildContextChipEl(chip));
-      }
+    userInput.querySelectorAll(".chip[data-id]").forEach((el) => {
+      if (!keep.has(el.dataset.id)) el.remove();
     });
     syncInputPlaceholder();
     updateSendState();
+  }
+
+  function pushContextChip(chip) {
+    if (!chip || !chip.id) return;
+    if (chips.some((c) => c.id === chip.id)) return;
+    chips.push(chip);
+    insertInlineNode(buildContextChipEl(chip));
   }
 
   function enableChipBarReorder() {
@@ -2033,13 +2024,12 @@
       showToast("该选区已在对话中");
       return;
     }
-    chips.push({
+    pushContextChip({
       id: "c" + chipIdSeq++,
       type: "selection",
       label,
       meta: { sheet: getActiveSheetName(), range: rangeLabel(sel) },
     });
-    renderChips();
     userInput.focus();
   }
 
@@ -2093,6 +2083,7 @@
   }
   btnPlus.addEventListener("click", (e) => {
     e.stopPropagation();
+    saveInputCaret();
     openUploadMenu();
   });
   const MAX_FILE_BYTES = 100 * 1024 * 1024;
@@ -2108,7 +2099,7 @@
         rejected.push(file.name);
         return;
       }
-      chips.push({
+      pushContextChip({
         id: "c" + chipIdSeq++,
         type: "attachment",
         label: file.name,
@@ -2123,7 +2114,6 @@
       added += 1;
     });
     if (added) {
-      renderChips();
       showToast(added === 1 ? "已添加：" + files.find((f) => f.size <= MAX_FILE_BYTES).name : "已添加 " + added + " 个文件");
     }
     if (rejected.length) {
@@ -2133,6 +2123,7 @@
   }
 
   function openLocalFilePicker() {
+    saveInputCaret();
     closeMenus();
     if (!localFileInput) return;
     localFileInput.value = "";
@@ -2225,16 +2216,14 @@
     if (!sidebarOpen) openSidebar();
     const label = it.name;
     if (!chips.some((c) => c.type === "ref" && c.label === label)) {
-      chips.push({
+      pushContextChip({
         id: "c" + chipIdSeq++,
         type: "ref",
         label,
         meta: { kind: it.kind, source: "at" },
       });
-      renderChips();
     }
     showToast("已引用：" + label);
-    userInput.focus();
     closeMenus();
     updateSendState();
   }
@@ -2507,17 +2496,26 @@
 
   btnScreenshot.addEventListener("click", (e) => {
     e.stopPropagation();
+    saveInputCaret();
     closeMenus();
-    chips.push({
+    pushContextChip({
       id: "c" + chipIdSeq++,
       type: "screenshot",
       label: "截图 " + Date.now().toString().slice(-6),
       meta: { size: "120.83KB", source: "screenshot" },
     });
-    if (!getInputPlainText()) setInputTextOnly("总结图片的信息");
-    renderChips();
+    if (!getInputPlainText()) {
+      const t = document.createTextNode("总结图片的信息");
+      let range = getInputInsertRange();
+      range.collapse(true);
+      range.insertNode(t);
+      placeCaretAfter(t);
+      userInput.focus();
+      placeCaretAfter(t);
+      syncInputPlaceholder();
+      updateSendState();
+    }
     showToast("已截图并挂入对话");
-    userInput.focus();
   });
 
   function syncMicChecks() {
@@ -2593,7 +2591,14 @@
     btnSend.disabled = !ok;
     btnSend.classList.toggle("enabled", ok);
   }
+  document.addEventListener("selectionchange", saveInputCaret);
+  userInput.addEventListener("keyup", saveInputCaret);
+  userInput.addEventListener("mouseup", saveInputCaret);
+  userInput.addEventListener("blur", saveInputCaret);
+  btnPlus.addEventListener("mousedown", saveInputCaret);
+  btnSkill.addEventListener("mousedown", saveInputCaret);
   userInput.addEventListener("input", () => {
+    saveInputCaret();
     updateSendState();
     detectTriggerFromInput();
   });
