@@ -1799,6 +1799,23 @@
     inputSavedRange = range.cloneRange();
   }
 
+  /** 插入后强制：焦点回输入框 + 光标在锚点后（rAF 再落一次，防止菜单点击抢焦点） */
+  function settleCaretAfterInsert(anchor) {
+    const go = () => {
+      if (!anchor || !anchor.parentNode || !userInput.contains(anchor)) return;
+      placeCaretAfter(anchor);
+      if (document.activeElement !== userInput) {
+        try { userInput.focus({ preventScroll: true }); } catch (e) { userInput.focus(); }
+      }
+      placeCaretAfter(anchor);
+    };
+    go();
+    requestAnimationFrame(() => {
+      go();
+      requestAnimationFrame(go);
+    });
+  }
+
   function getInputInsertRange() {
     const sel = window.getSelection();
     if (sel && sel.rangeCount) {
@@ -1824,7 +1841,7 @@
     let container = range.commonAncestorContainer;
     if (container.nodeType === 3) container = container.parentNode;
     if (container && container.closest) {
-      const chip = container.closest(".chip, .skill-chip");
+      const chip = container.closest(".chip, .skill-chip, .attach-chip");
       if (chip && userInput.contains(chip)) {
         const r = document.createRange();
         r.setStartAfter(chip);
@@ -1996,10 +2013,11 @@
     frag.appendChild(spacer);
     range.insertNode(frag);
     promoteChipInline(node);
+    // 保证零宽空格紧跟芯片（promote / 浏览器拆分可能导致 spacer 丢失或错位）
+    if (spacer.parentNode) spacer.parentNode.removeChild(spacer);
+    if (node.parentNode) node.after(spacer);
 
-    placeCaretAfter(spacer);
-    userInput.focus();
-    placeCaretAfter(spacer);
+    settleCaretAfterInsert(spacer);
     syncInputPlaceholder();
     updateSendState();
   }
@@ -2225,14 +2243,12 @@
       label,
       meta: { sheet: getActiveSheetName(), range: rangeLabel(sel) },
     });
-    userInput.focus();
   }
 
   function injectSelection() {
     if (!selection) return;
     if (!sidebarOpen) openSidebar();
     addSelectionChip(selection);
-    userInput.focus();
     hideFloat();
     hideCtxMenu();
     showToast("已添加到对话");
@@ -2315,7 +2331,7 @@
     if (rejected.length) {
       showToast("「" + rejected[0] + "」超过 100MB 限制" + (rejected.length > 1 ? " 等" : ""));
     }
-    userInput.focus();
+    // 光标已由最后一次 insertInlineNode 落在芯片后，勿再裸 focus
   }
 
   function openLocalFilePicker() {
@@ -2378,7 +2394,7 @@
       const name = item.dataset.name || item.dataset.skill || "";
       insertSkillChip(name);
       closeMenus();
-      userInput.focus();
+      // 勿再裸 focus，否则会把光标打回开头
     });
   });
 
@@ -2802,6 +2818,9 @@
   userInput.addEventListener("blur", saveInputCaret);
   btnPlus.addEventListener("mousedown", saveInputCaret);
   btnSkill.addEventListener("mousedown", saveInputCaret);
+  atPanel.addEventListener("mousedown", saveInputCaret);
+  skillPanel.addEventListener("mousedown", saveInputCaret);
+  if (uploadMenu) uploadMenu.addEventListener("mousedown", saveInputCaret);
   userInput.addEventListener("input", () => {
     saveInputCaret();
     syncInputPlaceholder();

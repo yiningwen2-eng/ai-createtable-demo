@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- demo-cache: chip-style-v1 -->
+<!-- demo-cache: caret-settle-v1 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -4235,6 +4235,35 @@ function placeCaretAfter(node) {
   }
 }
 
+function settleCaretAfterInsert(el, anchor) {
+  const go = () => {
+    if (!el || !anchor || !anchor.parentNode || !el.contains(anchor)) return;
+    placeCaretAfter(anchor);
+    if (document.activeElement !== el) {
+      try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+    }
+    placeCaretAfter(anchor);
+  };
+  go();
+  requestAnimationFrame(() => {
+    go();
+    requestAnimationFrame(go);
+  });
+}
+
+function promoteEditorChipInline(el, chip) {
+  if (!el || !chip) return;
+  let p = chip.parentNode;
+  while (p && p !== el && p.parentNode !== el) p = p.parentNode;
+  if (!p || p === el || p.tagName !== 'DIV') return;
+  const next = chip.nextSibling;
+  el.insertBefore(chip, p);
+  if (next && next.nodeType === 3) el.insertBefore(next, p);
+  if (!p.querySelector('.attach-chip, .chip, .skill-chip') && !(p.textContent || '').replace(/[\u200B\u00A0]/g, '').trim()) {
+    p.remove();
+  }
+}
+
 function normalizeChipInsertRange(el, range) {
   let container = range.commonAncestorContainer;
   if (container.nodeType === 3) container = container.parentNode;
@@ -4286,11 +4315,12 @@ function getMainInputInsertRange(el) {
   return getEditorInsertRange(el);
 }
 
-/** 在光标处插入附件/技能芯片；插完后光标落在内容后。先落光标再 focus，避免抢焦点。 */
+/** 在光标处插入附件/技能芯片；插完后光标落在内容后。 */
 function insertInlineChipAtCaret(el, chip) {
   if (!el || !chip) return;
 
   let range = getEditorInsertRange(el);
+  range = normalizeChipInsertRange(el, range);
   range.collapse(true);
 
   const spacer = document.createTextNode('\u200B');
@@ -4298,10 +4328,11 @@ function insertInlineChipAtCaret(el, chip) {
   frag.appendChild(chip);
   frag.appendChild(spacer);
   range.insertNode(frag);
+  promoteEditorChipInline(el, chip);
+  if (spacer.parentNode) spacer.parentNode.removeChild(spacer);
+  if (chip.parentNode) chip.after(spacer);
 
-  placeCaretAfter(spacer);
-  el.focus();
-  placeCaretAfter(spacer);
+  settleCaretAfterInsert(el, spacer);
 }
 
 function buildSkillChipElement(name) {
@@ -5516,7 +5547,14 @@ function stripEditorTriggerAtCaret(el, ch) {
 
 function bindPanelAtAndSlash() {
   const atPanel = $('panelAtPanel');
-  if (atPanel) atPanel.addEventListener('click', (e) => e.stopPropagation());
+  if (atPanel) {
+    atPanel.addEventListener('click', (e) => e.stopPropagation());
+    atPanel.addEventListener('mousedown', () => saveEditorCaret($('mainInput')));
+  }
+  const skillMenu = $('skillMenu');
+  if (skillMenu) {
+    skillMenu.addEventListener('mousedown', () => saveEditorCaret($('mainInput')));
+  }
 
   const input = $('mainInput');
   if (!input) return;
