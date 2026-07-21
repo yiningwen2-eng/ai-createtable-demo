@@ -1601,7 +1601,7 @@ body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; background: #
       <iframe
         id="agentSidebarFrame"
         class="agent-sidebar-frame"
-        src="agent-sidebar-embed.html?embed=1&v=82"
+        src="agent-sidebar-embed.html?embed=1&v=1"
         title="WPS 灵犀侧栏（完整 Agent Demo）"
         allow="clipboard-read; clipboard-write"
       ></iframe>
@@ -5488,7 +5488,7 @@ function stripEditorTriggerAtCaret(el, ch) {
   const after = t.slice(offset);
   const nextBefore = ch === '@'
     ? before.replace(/@[^\s@/]*$/, '')
-    : before.replace(/(^|[\s\u200B])\/[^\s@/]*$/, '$1');
+    : before.replace(/(^|[^/])\/[^\s@/]*$/, '$1');
   if (nextBefore === before) return;
   node.textContent = nextBefore + after;
   const range = document.createRange();
@@ -5521,9 +5521,9 @@ function bindPanelAtAndSlash() {
 
   function detectPanelTriggers() {
     const before = getEditorTextBeforeCaret(input);
-    // @ 任意位置；/ 需词界（芯片已视作空格）。建表面板 @ 无「当前工作表」
+    // @、/ 任意位置（如 1111/）；连续 // 不触发。建表面板 @ 无「当前工作表」
     const atMatch = /@([^\s@/]*)$/.exec(before);
-    const slashMatch = /(^|\s)\/([^\s@/]*)$/.exec(before);
+    const slashMatch = /(^|[^/])\/([^\s@/]*)$/.exec(before);
     if (atMatch) {
       openPanelAtPanel();
       return;

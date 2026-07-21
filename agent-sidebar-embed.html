@@ -1894,7 +1894,7 @@
     const after = t.slice(offset);
     const nextBefore = ch === "@"
       ? before.replace(/@[^\s@/]*$/, "")
-      : before.replace(/(^|[\s\u200B])\/[^\s@/]*$/, "$1");
+      : before.replace(/(^|[^/])\/[^\s@/]*$/, "$1");
     if (nextBefore === before) {
       syncInputPlaceholder();
       return;
@@ -2630,11 +2630,10 @@
   }
 
   function detectTriggerFromInput() {
-    // @：任意位置（光标前以 @token 结尾即可，可多次唤起）
-    // /：词首或空白后（避免 https:// 误触）；芯片已规整为空格边界
+    // @、/：光标前以触发符结尾即可（支持 1111/ 等任意位置）；连续 // 不触发，避免 https:// 误开
     const before = getTextBeforeCaret();
     const atMatch = before.match(/@([^\s@/]*)$/);
-    const slashMatch = before.match(/(^|\s)\/([^\s@/]*)$/);
+    const slashMatch = before.match(/(^|[^/])\/([^\s@/]*)$/);
     if (atMatch) {
       openAtPanel();
       return;
