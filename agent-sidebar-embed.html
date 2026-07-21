@@ -2025,7 +2025,10 @@
     }
 
     function syncChipsOrderFromDom() {
-      const ids = listChips().filter((el) => el.classList.contains("chip")).map((el) => el.dataset.id).filter(Boolean);
+      const ids = listChips()
+        .filter((el) => el.classList.contains("chip") || el.classList.contains("attach-chip"))
+        .map((el) => el.dataset.id)
+        .filter(Boolean);
       const map = new Map(chips.map((c) => [c.id, c]));
       chips = ids.map((id) => map.get(id)).filter(Boolean);
     }
