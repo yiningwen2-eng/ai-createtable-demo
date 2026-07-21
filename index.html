@@ -580,31 +580,77 @@ body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; background: #
 .ai-panel .at-panel {
   position: absolute; bottom: calc(100% + 6px); left: 0; background: #fff; border: 1px solid #e8e8e8;
   border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); display: none; z-index: 110;
-  min-width: 220px; max-width: 280px; padding: 6px 4px 4px; overflow: hidden;
+  width: 200px; min-width: 0; max-width: none; padding: 8px 6px 10px; overflow: hidden;
 }
 .ai-panel .at-panel.show { display: block; }
-.ai-panel .at-panel.drill-mode { max-height: 300px; }
+.ai-panel .at-panel.drill-mode {
+  width: 240px;
+  max-height: min(300px, calc(100vh - 220px));
+}
+.ai-panel .at-panel .at-list {
+  max-height: none; overflow: visible;
+}
+.ai-panel .at-panel.drill-mode .at-list {
+  max-height: min(240px, calc(100vh - 260px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .ai-panel .at-panel .at-title {
-  font-size: 12px; color: #999; padding: 2px 10px 6px; display: flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; color: #888;
+  padding: 4px 8px 8px; letter-spacing: 0.2px;
+  display: flex; align-items: center; gap: 6px;
 }
 .ai-panel .at-panel .at-back {
-  border: none; background: none; cursor: pointer; font-size: 16px; color: #666; padding: 0 4px 0 0; line-height: 1;
+  border: 0; background: transparent; color: #666;
+  font-size: 16px; cursor: pointer; padding: 0 2px; line-height: 1;
 }
-.ai-panel .at-panel .at-list { max-height: 220px; overflow-y: auto; }
+.ai-panel .at-panel .at-back:hover { color: #111; }
 .ai-panel .at-panel .at-item {
-  width: 100%; border: none; background: none; text-align: left; font-family: inherit;
-  display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; color: #333;
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 9px 10px; border-radius: 8px;
+  font-size: 13px; color: #333; text-align: left;
+  border: none; background: none; font-family: inherit; cursor: pointer;
 }
 .ai-panel .at-panel .at-item:hover { background: #f3f4f6; }
 .ai-panel .at-panel .at-icon {
-  width: 22px; height: 22px; border-radius: 5px; background: #64748b; color: #fff;
-  display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;
+  width: 28px; height: 28px; border-radius: 6px;
+  background: #64748b; color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .ai-panel .at-panel .at-icon.chat { background: #8b5cf6; }
+.ai-panel .at-panel .at-icon.folder { background: #64748b; }
+.ai-panel .at-panel .at-ftype {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ai-panel .at-panel .at-ftype svg { width: 18px; height: 18px; display: block; }
+.ai-panel .at-panel .at-ftype.sheet { background: #e8f8ef; }
+.ai-panel .at-panel .at-ftype.doc { background: #e8f1ff; }
+.ai-panel .at-panel .at-ftype.otl { background: #f3e8ff; }
+.ai-panel .at-panel .at-ftype.chat {
+  background: linear-gradient(145deg, #f0e9ff, #e8f7f2);
+  border: 1px solid #e4ddf7;
+}
 .ai-panel .at-panel .at-meta { min-width: 0; flex: 1; }
-.ai-panel .at-panel .at-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ai-panel .at-panel .at-sub { font-size: 11px; color: #999; margin-top: 2px; }
-.ai-panel .at-panel .at-enter { color: #bbb; }
+.ai-panel .at-panel .at-name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px;
+}
+.ai-panel .at-panel .at-sub { font-size: 11px; color: #999; margin-top: 1px; }
+.ai-panel .at-panel .at-enter {
+  color: #bbb; font-size: 14px; flex-shrink: 0;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px; cursor: pointer;
+}
+.ai-panel .at-panel .at-item:hover .at-enter { color: #888; }
+.ai-panel .at-panel .at-enter:hover { background: rgba(0,0,0,.06); color: #555; }
+.ai-panel .at-panel .at-return {
+  color: #bbb; font-size: 13px; flex-shrink: 0; opacity: 0;
+}
+.ai-panel .at-panel .at-item:hover .at-return { opacity: 1; color: #888; }
+.ai-panel .at-panel .at-sep {
+  height: 1px; background: #eee; margin: 6px 4px;
+}
 .ai-panel .func-btn .tip,
 .ai-panel .paste-data-btn .tip {
   position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
@@ -1555,7 +1601,7 @@ body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; background: #
       <iframe
         id="agentSidebarFrame"
         class="agent-sidebar-frame"
-        src="agent-sidebar-embed.html?embed=1&v=78"
+        src="agent-sidebar-embed.html?embed=1&v=81"
         title="WPS 灵犀侧栏（完整 Agent Demo）"
         allow="clipboard-read; clipboard-write"
       ></iframe>
@@ -5137,96 +5183,212 @@ function closePanelPopupsOnly() {
   if (arrow) arrow.classList.remove('up');
 }
 
-/** 建表面板 @ ：屏蔽「当前工作表」，仅最近文件 / 历史会话 */
+/** 建表面板 @ ：与侧栏同数据/同交互，仅屏蔽「当前工作表」 */
 let panelAtView = 'root';
-const PANEL_AT_RECENT = [
-  { name: '周报参考.docx', sub: '最近打开', kind: 'file' },
-  { name: '销售明细表.xlsx', sub: '最近打开', kind: 'file' },
-  { name: '巡检现场图.png', sub: '最近打开', kind: 'file' },
-];
-const PANEL_AT_CHATS = [
-  { name: '帮我做本月收支流水', sub: '03-12', kind: 'chat' },
-  { name: '图片转考勤表', sub: '来自：巡检现场图.png', kind: 'chat' },
+let panelRecentLoaded = 0;
+const PANEL_RECENT_PAGE = 20;
+const PANEL_ALL_RECENT_REFS = (function () {
+  const base = [
+    { kind: 'file', ftype: 'sheet', name: 'base_表1-收款数据1' },
+    { kind: 'file', ftype: 'sheet', name: 'data_统计汇总表' },
+    { kind: 'file', ftype: 'doc', name: '【8月】区域经营周报' },
+    { kind: 'file', ftype: 'sheet', name: 'Q1业绩复盘-共享版' },
+    { kind: 'file', ftype: 'sheet', name: '【7月】渠道费用明细(63)' },
+    { kind: 'file', ftype: 'doc', name: '客户拜访纪要模板' },
+    { kind: 'file', ftype: 'otl', name: 'AI retention 分析底表' },
+    { kind: 'file', ftype: 'sheet', name: '十个多文档汇总' },
+    { kind: 'file', ftype: 'sheet', name: '【6月】门店销量表' },
+    { kind: 'file', ftype: 'doc', name: '文字文稿(62)' },
+    { kind: 'file', ftype: 'sheet', name: '库存周转分析' },
+    { kind: 'file', ftype: 'otl', name: 'Data Agent 周报提纲' },
+  ];
+  const more = [];
+  for (let i = 1; i <= 36; i++) {
+    const t = i % 3 === 0 ? 'doc' : (i % 5 === 0 ? 'otl' : 'sheet');
+    more.push({
+      kind: 'file',
+      ftype: t,
+      name: (t === 'doc' ? '文稿' : (t === 'otl' ? '智能文档' : '表格')) + '-近30天样例' + i,
+    });
+  }
+  return base.concat(more);
+})();
+const PANEL_PAST_CHATS = [
+  { kind: 'chat', name: '东北同比下滑复盘', sub: '昨天 18:20', scope: 'workbook' },
+  { kind: 'chat', name: 'Q3 区域对比', sub: '周一', scope: 'workbook' },
+  { kind: 'chat', name: '部门预算异常排查', sub: '上周五', scope: 'workbook' },
+  { kind: 'chat', name: '合计行公式核对', sub: '07-10', scope: 'workbook' },
+  { kind: 'chat', name: '海外增速归因', sub: '渠道费用明细表', scope: 'other' },
+  { kind: 'chat', name: '区域销售排名解读', sub: '门店销量表', scope: 'other' },
+  { kind: 'chat', name: '筛选条件保存建议', sub: '库存周转分析', scope: 'other' },
+  { kind: 'chat', name: '同比口径确认', sub: 'AI retention 分析底表', scope: 'other' },
 ];
 
-function renderPanelAtPanel() {
-  const panel = $('panelAtPanel');
+function panelFileTypeIconHtml(it) {
+  if (it.kind === 'chat') {
+    return '<span class="at-ftype chat" title="历史会话"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H10l-4 3.2V16H6.5A2.5 2.5 0 0 1 4 13.5v-7z" stroke="#7c3aed" stroke-width="1.8" fill="#f5f0ff"/><circle cx="9" cy="10" r="1" fill="#7c3aed"/><circle cx="12" cy="10" r="1" fill="#7c3aed"/><circle cx="15" cy="10" r="1" fill="#7c3aed"/></svg></span>';
+  }
+  if (it.ftype === 'doc') {
+    return '<span class="at-ftype doc" title="文字"><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="3" fill="#3b82f6"/><text x="12" y="16" text-anchor="middle" fill="#fff" font-size="11" font-weight="700" font-family="Arial,sans-serif">W</text></svg></span>';
+  }
+  if (it.ftype === 'otl') {
+    return '<span class="at-ftype otl" title="智能文档"><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="3" fill="#8b5cf6"/><path d="M8 8h8M8 12h8M8 16h5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span>';
+  }
+  return '<span class="at-ftype sheet" title="表格"><svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="3" fill="#22c55e"/><text x="12" y="16" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" font-family="Arial,sans-serif">S</text></svg></span>';
+}
+
+function setPanelAtTitle(view) {
   const title = $('panelAtTitle');
-  const list = $('panelAtList');
-  if (!panel || !title || !list) return;
-  list.innerHTML = '';
-  panel.classList.toggle('drill-mode', panelAtView !== 'root');
-  if (panelAtView === 'root') {
+  const panel = $('panelAtPanel');
+  if (!title || !panel) return;
+  if (view === 'root') {
     title.textContent = '引用';
-    [
-      { id: 'recent', name: '最近文件', icon: '近', iconCls: '', drill: 'recent' },
-      { id: 'chats', name: '历史会话', icon: '话', iconCls: 'chat', drill: 'chats' },
-    ].forEach((it) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'at-item';
-      btn.innerHTML =
-        '<span class="at-icon ' + it.iconCls + '">' + it.icon + '</span>' +
-        '<span class="at-meta"><div class="at-name">' + it.name + '</div></span>' +
-        '<span class="at-enter">›</span>';
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        panelAtView = it.drill;
-        renderPanelAtPanel();
-      });
-      list.appendChild(btn);
-    });
     return;
   }
+  const label = view === 'recent' ? '最近' : '历史会话';
   title.innerHTML = '';
   const back = document.createElement('button');
   back.type = 'button';
   back.className = 'at-back';
+  back.setAttribute('aria-label', '返回');
   back.textContent = '‹';
   back.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
     panelAtView = 'root';
-    renderPanelAtPanel();
+    requestAnimationFrame(() => {
+      renderPanelAtPanel();
+      panel.classList.add('show');
+    });
   });
   const span = document.createElement('span');
-  span.textContent = panelAtView === 'recent' ? '最近' : '历史会话';
+  span.textContent = label;
   title.appendChild(back);
   title.appendChild(span);
-  const rows = panelAtView === 'recent' ? PANEL_AT_RECENT : PANEL_AT_CHATS;
-  rows.forEach((it) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'at-item';
-    btn.innerHTML =
-      '<span class="at-icon ' + (it.kind === 'chat' ? 'chat' : '') + '">' + (it.kind === 'chat' ? '话' : '文') + '</span>' +
-      '<span class="at-meta"><div class="at-name">' + escapeHtml(it.name) + '</div>' +
-      (it.sub ? '<div class="at-sub">' + escapeHtml(it.sub) + '</div>' : '') + '</span>';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      addPanelAtChip(it.name);
-    });
-    list.appendChild(btn);
-  });
 }
 
-function addPanelAtChip(label) {
+function makePanelAtItem(it) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'at-item';
+  if (it.id) btn.setAttribute('data-at-id', it.id);
+  if (it.action === 'drill') {
+    const iconCls = it.id === 'cat-chats' ? 'chat' : 'folder';
+    const iconText = it.id === 'cat-chats' ? '话' : '近';
+    btn.innerHTML =
+      '<span class="at-icon ' + iconCls + '">' + iconText + '</span>' +
+      '<span class="at-meta"><div class="at-name">' + escapeHtml(it.name) + '</div></span>' +
+      '<span class="at-enter">›</span>';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      panelAtView = it.drillTo;
+      requestAnimationFrame(() => {
+        renderPanelAtPanel();
+        const panel = $('panelAtPanel');
+        if (panel) panel.classList.add('show');
+      });
+    });
+  } else if (it.kind === 'chat') {
+    btn.innerHTML =
+      panelFileTypeIconHtml(it) +
+      '<span class="at-meta"><div class="at-name">' + escapeHtml(it.name) + '</div>' +
+      (it.sub ? '<div class="at-sub">' + escapeHtml(it.sub) + '</div>' : '') +
+      '</span>' +
+      '<span class="at-return">↵</span>';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addPanelAtChip(it);
+    });
+  } else {
+    btn.innerHTML =
+      panelFileTypeIconHtml(it) +
+      '<span class="at-meta"><div class="at-name">' + escapeHtml(it.name) + '</div></span>' +
+      '<span class="at-return">↵</span>';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addPanelAtChip(it);
+    });
+  }
+  return btn;
+}
+
+function renderPanelAtPanel() {
+  const panel = $('panelAtPanel');
+  const list = $('panelAtList');
+  if (!panel || !list) return;
+  setPanelAtTitle(panelAtView);
+  list.innerHTML = '';
+  list.onscroll = null;
+  panel.classList.toggle('drill-mode', panelAtView !== 'root');
+
+  if (panelAtView === 'recent') {
+    panelRecentLoaded = 0;
+    const renderPage = () => {
+      const slice = PANEL_ALL_RECENT_REFS.slice(panelRecentLoaded, panelRecentLoaded + PANEL_RECENT_PAGE);
+      slice.forEach((r) => list.appendChild(makePanelAtItem(r)));
+      panelRecentLoaded += slice.length;
+    };
+    renderPage();
+    list.onscroll = () => {
+      if (panelAtView !== 'recent') return;
+      if (panelRecentLoaded >= PANEL_ALL_RECENT_REFS.length) return;
+      if (list.scrollTop + list.clientHeight >= list.scrollHeight - 24) renderPage();
+    };
+    return;
+  }
+  if (panelAtView === 'chats') {
+    PANEL_PAST_CHATS.forEach((r) => list.appendChild(makePanelAtItem(r)));
+    return;
+  }
+
+  // root：仅最近文件 / 历史会话（无当前工作表）
+  list.appendChild(makePanelAtItem({
+    id: 'cat-recent',
+    kind: 'folder',
+    name: '最近文件',
+    action: 'drill',
+    drillTo: 'recent',
+  }));
+  list.appendChild(makePanelAtItem({
+    id: 'cat-chats',
+    kind: 'chatcat',
+    name: '历史会话',
+    action: 'drill',
+    drillTo: 'chats',
+  }));
+}
+
+const PANEL_AT_ATTACH_SVG = {
+  excel: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">XLS</text></svg>',
+  word: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">DOC</text></svg>',
+  file: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/></svg>',
+};
+
+function panelAtChipKind(it) {
+  if (!it) return 'file';
+  if (it.kind === 'chat') return 'file';
+  if (it.ftype === 'sheet') return 'excel';
+  if (it.ftype === 'doc') return 'word';
+  return 'file';
+}
+
+function addPanelAtChip(it) {
   const el = $('mainInput');
   if (!el) return;
-  el.normalize();
-  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
-  let lastText = null;
-  while (walker.nextNode()) lastText = walker.currentNode;
-  if (lastText) {
-    lastText.textContent = (lastText.textContent || '').replace(/(^|\s)@\S*$/, '$1').replace(/\s+$/, '');
-  }
+  const item = typeof it === 'string' ? { name: it, kind: 'file', ftype: 'doc' } : it;
+  const label = item.name || '';
+  stripEditorTriggerAtCaret(el, '@');
+  const kind = panelAtChipKind(item);
   const chip = document.createElement('span');
-  chip.className = 'attach-chip';
+  chip.className = 'attach-chip attach-chip--' + kind;
   chip.contentEditable = 'false';
   chip.dataset.attId = 'at-' + Date.now();
   chip.innerHTML =
-    '<span class="ac-name">@ ' + escapeHtml(label) + '</span>' +
-    '<button type="button" class="ac-x" aria-label="移除">×</button>';
-  chip.querySelector('.ac-x').addEventListener('click', (e) => {
+    '<span class="attach-icon">' + (PANEL_AT_ATTACH_SVG[kind] || PANEL_AT_ATTACH_SVG.file) + '</span>' +
+    '<span class="attach-name" title="' + escapeHtml(label) + '">' + escapeHtml(label) + '</span>' +
+    '<button type="button" class="attach-remove" aria-label="移除">×</button>';
+  chip.querySelector('.attach-remove').addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     chip.remove();
@@ -5250,6 +5412,83 @@ function openPanelAtPanel() {
   if (panel) panel.classList.add('show');
 }
 
+/** 光标前文本：芯片→空格，去 ZWSP，支持中间/多次唤起 @ / */
+function getEditorTextBeforeCaret(el) {
+  if (!el) return '';
+  if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+    const v = el.value || '';
+    const caret = el.selectionStart != null ? el.selectionStart : v.length;
+    return v.slice(0, caret).replace(/\u00A0/g, ' ').replace(/\u200B/g, '');
+  }
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !el.contains(sel.anchorNode)) {
+    return getInputPlainText(el);
+  }
+  const range = sel.getRangeAt(0).cloneRange();
+  range.selectNodeContents(el);
+  range.setEnd(sel.anchorNode, sel.anchorOffset);
+  const frag = range.cloneContents();
+  const div = document.createElement('div');
+  div.appendChild(frag);
+  div.querySelectorAll('.chip, .skill-chip, .attach-chip, .field-chip').forEach((n) => {
+    n.replaceWith(document.createTextNode(' '));
+  });
+  return (div.textContent || '').replace(/\u00A0/g, ' ').replace(/\u200B/g, '');
+}
+
+function stripEditorTriggerAtCaret(el, ch) {
+  if (!el) return;
+  const sel = window.getSelection();
+  let node = null;
+  let offset = 0;
+  if (sel && sel.rangeCount && el.contains(sel.anchorNode)) {
+    node = sel.anchorNode;
+    offset = sel.anchorOffset;
+  } else {
+    const saved = editorSavedRanges.get(el);
+    if (saved) {
+      try {
+        if (el.contains(saved.startContainer)) {
+          node = saved.startContainer;
+          offset = saved.startOffset;
+        }
+      } catch (e) { /* detached */ }
+    }
+  }
+  if (!node || node.nodeType !== 3) {
+    el.normalize();
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        const p = n.parentElement;
+        if (p && p.closest && p.closest('.chip, .skill-chip, .attach-chip, .field-chip')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    let last = null;
+    while (walker.nextNode()) last = walker.currentNode;
+    if (!last) return;
+    node = last;
+    offset = (last.textContent || '').length;
+  }
+  const t = node.textContent || '';
+  const before = t.slice(0, offset);
+  const after = t.slice(offset);
+  const nextBefore = ch === '@'
+    ? before.replace(/@[^\s@/]*$/, '')
+    : before.replace(/(^|[\s\u200B])\/[^\s@/]*$/, '$1');
+  if (nextBefore === before) return;
+  node.textContent = nextBefore + after;
+  const range = document.createRange();
+  range.setStart(node, nextBefore.length);
+  range.collapse(true);
+  const s = window.getSelection();
+  s.removeAllRanges();
+  s.addRange(range);
+  editorSavedRanges.set(el, range.cloneRange());
+}
+
 function bindPanelAtAndSlash() {
   const atPanel = $('panelAtPanel');
   if (atPanel) atPanel.addEventListener('click', (e) => e.stopPropagation());
@@ -5269,10 +5508,11 @@ function bindPanelAtAndSlash() {
     }
   });
 
-  input.addEventListener('input', () => {
-    const val = getInputPlainText(input);
-    const atMatch = /(^|\s)@(\S*)$/.exec(val);
-    const slashMatch = /(^|\s)\/(\S*)$/.exec(val);
+  function detectPanelTriggers() {
+    const before = getEditorTextBeforeCaret(input);
+    // @ 任意位置；/ 需词界（芯片已视作空格）。建表面板 @ 无「当前工作表」
+    const atMatch = /@([^\s@/]*)$/.exec(before);
+    const slashMatch = /(^|\s)\/([^\s@/]*)$/.exec(before);
     if (atMatch) {
       openPanelAtPanel();
       return;
@@ -5292,6 +5532,11 @@ function bindPanelAtAndSlash() {
       return;
     }
     if ($('panelAtPanel')) $('panelAtPanel').classList.remove('show');
+  }
+
+  input.addEventListener('input', detectPanelTriggers);
+  input.addEventListener('keyup', (e) => {
+    if (e.key === '@' || e.key === '/' || e.key === 'Process') detectPanelTriggers();
   });
 }
 
@@ -6355,15 +6600,7 @@ function selectTableSkill(name) {
   if (!name) return;
   closeAllPopups();
   const el = $('mainInput');
-  if (el) {
-    el.normalize();
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
-    let lastText = null;
-    while (walker.nextNode()) lastText = walker.currentNode;
-    if (lastText) {
-      lastText.textContent = (lastText.textContent || '').replace(/(^|\s)\/\S*$/, '$1').replace(/\s+$/, '');
-    }
-  }
+  if (el) stripEditorTriggerAtCaret(el, '/');
   insertSkillChip(name);
   updateGuide('已选表格技能「' + name + '」，可在芯片后继续输入文字');
 }

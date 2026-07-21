@@ -1746,6 +1746,7 @@
     userInput.classList.toggle("show-placeholder", !hasChip && !hasText);
   }
 
+  /** 光标前纯文本：芯片视为空格边界，去掉 ZWSP，便于多次 / 任意位置识别 @ / */
   function getTextBeforeCaret() {
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount || !userInput.contains(sel.anchorNode)) {
@@ -1757,8 +1758,10 @@
     const frag = range.cloneContents();
     const div = document.createElement("div");
     div.appendChild(frag);
-    div.querySelectorAll(".chip, .skill-chip").forEach((n) => n.remove());
-    return (div.textContent || "").replace(/\u00A0/g, " ");
+    div.querySelectorAll(".chip, .skill-chip, .attach-chip").forEach((n) => {
+      n.replaceWith(document.createTextNode(" "));
+    });
+    return (div.textContent || "").replace(/\u00A0/g, " ").replace(/\u200B/g, "");
   }
 
   let inputSavedRange = null;
@@ -1848,6 +1851,93 @@
     const base = name.slice(0, dot);
     const keep = Math.max(4, max - ext.length - 1);
     return base.slice(0, keep) + "…" + ext;
+  }
+
+  /** 清除光标处的 @ / 触发符（支持任意位置，不只整段末尾） */
+  function stripTrailingTriggerInEditor(ch) {
+    if (!userInput) return;
+    let node = null;
+    let offset = 0;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount && userInput.contains(sel.anchorNode)) {
+      node = sel.anchorNode;
+      offset = sel.anchorOffset;
+    } else if (inputSavedRange) {
+      try {
+        if (userInput.contains(inputSavedRange.startContainer)) {
+          node = inputSavedRange.startContainer;
+          offset = inputSavedRange.startOffset;
+        }
+      } catch (e) { /* detached */ }
+    }
+    if (!node || node.nodeType !== 3) {
+      const walker = document.createTreeWalker(userInput, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) {
+          const p = n.parentElement;
+          if (p && p.closest && p.closest(".chip, .skill-chip, .attach-chip")) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+      let last = null;
+      while (walker.nextNode()) last = walker.currentNode;
+      if (!last) {
+        syncInputPlaceholder();
+        return;
+      }
+      node = last;
+      offset = (last.textContent || "").length;
+    }
+    const t = node.textContent || "";
+    const before = t.slice(0, offset);
+    const after = t.slice(offset);
+    const nextBefore = ch === "@"
+      ? before.replace(/@[^\s@/]*$/, "")
+      : before.replace(/(^|[\s\u200B])\/[^\s@/]*$/, "$1");
+    if (nextBefore === before) {
+      syncInputPlaceholder();
+      return;
+    }
+    node.textContent = nextBefore + after;
+    const range = document.createRange();
+    range.setStart(node, nextBefore.length);
+    range.collapse(true);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(range);
+    inputSavedRange = range.cloneRange();
+    syncInputPlaceholder();
+  }
+
+  /** 只替换纯文本，保留芯片（暗词/建议写入等） */
+  function setInputTextOnly(text) {
+    if (!userInput) return;
+    userInput.querySelectorAll(".chip, .skill-chip, .attach-chip").forEach((n) => n.remove());
+    chips = [];
+    userInput.textContent = text || "";
+    syncInputPlaceholder();
+    updateSendState();
+  }
+
+  function buildSkillChipEl(name) {
+    const el = document.createElement("span");
+    el.className = "skill-chip";
+    el.contentEditable = "false";
+    el.dataset.skill = name;
+    el.innerHTML =
+      SKILL_BOLT_SVG +
+      '<span class="skill-chip-text">' + name + "</span>" +
+      '<button class="skill-chip-remove" type="button" aria-label="移除技能">×</button>';
+    el.querySelector(".skill-chip-remove").addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      el.remove();
+      syncInputPlaceholder();
+      updateSendState();
+      showToast("已移除技能");
+    });
+    return el;
   }
 
   /** 把芯片提升为 mixed-input 直接子节点，避免被包进块级 div 导致竖排 */
@@ -2536,8 +2626,10 @@
   }
 
   function detectTriggerFromInput() {
+    // @：任意位置（光标前以 @token 结尾即可，可多次唤起）
+    // /：词首或空白后（避免 https:// 误触）；芯片已规整为空格边界
     const before = getTextBeforeCaret();
-    const atMatch = before.match(/(^|\s)@([^\s@/]*)$/);
+    const atMatch = before.match(/@([^\s@/]*)$/);
     const slashMatch = before.match(/(^|\s)\/([^\s@/]*)$/);
     if (atMatch) {
       openAtPanel();
@@ -2667,6 +2759,7 @@
   btnSkill.addEventListener("mousedown", saveInputCaret);
   userInput.addEventListener("input", () => {
     saveInputCaret();
+    syncInputPlaceholder();
     updateSendState();
     detectTriggerFromInput();
   });
