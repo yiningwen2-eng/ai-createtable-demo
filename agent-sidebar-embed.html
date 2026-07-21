@@ -2613,9 +2613,13 @@
 
   function openAtPanel() {
     closeMenus("at");
-    atView = "root";
-    hideAtFlyout();
-    renderAtPanel();
+    const alreadyOpen = atPanel.classList.contains("show");
+    // 已打开时保留下钻层级，避免输入过程中被反复打回 root
+    if (!alreadyOpen) {
+      atView = "root";
+      hideAtFlyout();
+      renderAtPanel();
+    }
     atPanel.classList.add("show");
     triggerMode = "at";
     syncSbBodyMenuOpen();
