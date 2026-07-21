@@ -472,94 +472,94 @@
     overflow: visible;
   }
 
-  .chip-bar { display: none; } /* 已并入混合输入区，保留类名兼容 */
-  .chip {
-    display: inline-flex;
+  .chip-bar { display: none; } /* 已并入混合输入区 */
+
+  /* 与建表面板 attach-chip 同构：行内并排，不独占一行 */
+  .mixed-input .attach-chip,
+  .mixed-input .chip,
+  .mixed-input .skill-chip {
+    display: inline-flex !important;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    vertical-align: middle;
+    width: auto !important;
     max-width: 200px;
-    padding: 3px 6px 3px 8px;
+    height: 28px;
+    box-sizing: border-box;
+    padding: 3px 22px 3px 5px;
     margin: 2px 4px 2px 0;
-    vertical-align: middle;
-    background: #f8f8f8;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e8e8e8;
     border-radius: 8px;
-    font-size: 12px;
-    color: #374151;
-    line-height: 1.3;
-    cursor: grab;
-    user-select: none;
-    touch-action: none;
-    transition: opacity 0.15s ease, box-shadow 0.15s ease;
-  }
-  .chip.is-dragging {
-    opacity: 0.45;
-    cursor: grabbing;
-    z-index: 2;
-    box-shadow: 0 4px 12px rgba(0,0,0,.12);
-  }
-  .chip.selection { background: #eef8f2; border-color: #c6e9d5; color: #166534; }
-  .chip.attachment { background: #fff; border-color: #e5e7eb; color: #333; }
-  .chip.ref { background: #fff; border-color: #e5e7eb; color: #333; }
-  .chip.screenshot { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
-  .chip.skill,
-  .skill-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    max-width: 220px;
-    padding: 3px 8px;
-    margin: 2px 4px 2px 0;
-    vertical-align: middle;
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 12px;
-    color: #333;
-    line-height: 1.3;
-    cursor: grab;
+    position: relative;
+    white-space: nowrap;
     user-select: none;
+    cursor: grab;
     touch-action: none;
+    line-height: 1.25;
+    font-size: 13px;
+    color: #333;
+    transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
   }
-  .skill-chip.is-dragging { opacity: 0.45; cursor: grabbing; }
-  .skill-chip .skill-bolt {
+  .mixed-input .attach-chip.is-dragging,
+  .mixed-input .chip.is-dragging,
+  .mixed-input .skill-chip.is-dragging {
+    opacity: 0.45; cursor: grabbing; z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  }
+  .mixed-input .attach-chip:hover,
+  .mixed-input .chip:hover { border-color: #d0d0d0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .mixed-input .attach-icon {
+    width: 22px; height: 22px; border-radius: 5px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .mixed-input .attach-icon svg { width: 16px; height: 16px; display: block; }
+  .mixed-input .attach-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mixed-input .attach-chip--image .attach-icon { background: #e8f0fe; color: #4d8cf5; }
+  .mixed-input .attach-chip--pdf .attach-icon { background: #fdecea; color: #e53935; }
+  .mixed-input .attach-chip--word .attach-icon { background: #e8f0fe; color: #2b579a; }
+  .mixed-input .attach-chip--excel .attach-icon { background: #e8f5e9; color: #217346; }
+  .mixed-input .attach-chip--ppt .attach-icon { background: #fff3e0; color: #d24726; }
+  .mixed-input .attach-chip--file .attach-icon,
+  .mixed-input .chip .attach-icon { background: #f5f5f5; color: #888; }
+  .mixed-input .attach-name,
+  .mixed-input .chip-label {
+    font-size: 13px; color: #333; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
+  }
+  .mixed-input .attach-remove,
+  .mixed-input .chip-x,
+  .mixed-input .skill-chip-remove {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px; padding: 0; border: none; border-radius: 4px;
+    background: rgba(0,0,0,.06); color: #888; font-size: 12px; line-height: 1;
+    cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s, color 0.15s;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .mixed-input .attach-chip:hover .attach-remove,
+  .mixed-input .chip:hover .chip-x,
+  .mixed-input .skill-chip:hover .skill-chip-remove { opacity: 1; }
+  .mixed-input .attach-remove:hover,
+  .mixed-input .chip-x:hover,
+  .mixed-input .skill-chip-remove:hover { background: rgba(0,0,0,.12); color: #333; }
+
+  .mixed-input .chip.selection { background: #eef8f2; border-color: #c6e9d5; color: #166534; }
+  .mixed-input .chip.ref { background: #fff; }
+  .mixed-input .chip.screenshot { background: #fff7ed; border-color: #fed7aa; }
+
+  .mixed-input .skill-chip { padding-right: 22px; }
+  .mixed-input .skill-chip .skill-bolt {
     width: 14px; height: 14px; flex-shrink: 0; color: #3b82f6;
   }
-  .skill-chip .skill-chip-text {
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;
+  .mixed-input .skill-chip .skill-chip-text {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;
   }
-  .skill-chip .skill-chip-remove,
-  .chip-x {
-    width: 16px; height: 16px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 4px;
-    color: inherit;
-    opacity: .45;
-    flex-shrink: 0;
-    margin-left: 2px;
-    border: none; background: transparent; cursor: pointer; padding: 0;
-    font-size: 12px; line-height: 1;
+  .mixed-input .chip-thumb {
+    width: 22px; height: 18px; border-radius: 3px; flex-shrink: 0;
+    background: linear-gradient(135deg, #dbeafe, #fce7f3); border: 1px solid #e5e5e5;
   }
-  .skill-chip .skill-chip-remove:hover,
-  .chip-x:hover { opacity: 1; background: rgba(0,0,0,.08); }
-  .chip-thumb {
-    width: 22px; height: 18px;
-    border-radius: 3px;
-    background: linear-gradient(135deg, #dbeafe, #fce7f3);
-    flex-shrink: 0;
-    border: 1px solid #e5e5e5;
-  }
-  .chip-meta { display: flex; flex-direction: column; min-width: 0; }
-  .chip-label {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 140px;
-  }
-  .chip-sub { font-size: 10px; color: #999; }
 
   .input-area { min-height: 48px; max-height: 140px; overflow-y: auto; }
   .mixed-input {
+    display: block;
     width: 100%;
     min-height: 44px;
     border: none;
@@ -569,10 +569,17 @@
     color: var(--text);
     background: transparent;
     font-family: inherit;
+    /* 允许芯片行内并排换行，避免每个芯片独占一行 */
     white-space: pre-wrap;
-    word-break: break-word;
+    word-break: normal;
+    overflow-wrap: break-word;
     position: relative;
   }
+  /* contenteditable 常把节点包进块级 div，强制行内以免芯片竖排 */
+  .mixed-input > div {
+    display: inline;
+  }
+  .mixed-input > div > br:only-child { display: none; }
   .mixed-input.show-placeholder:before {
     content: attr(data-placeholder);
     color: var(--text-muted);
@@ -1728,13 +1735,13 @@
   function getInputPlainText() {
     if (!userInput) return "";
     const clone = userInput.cloneNode(true);
-    clone.querySelectorAll(".chip, .skill-chip").forEach((n) => n.remove());
+    clone.querySelectorAll(".chip, .skill-chip, .attach-chip").forEach((n) => n.remove());
     return (clone.textContent || "").replace(/\u00A0/g, " ").replace(/\u200B/g, "").trim();
   }
 
   function syncInputPlaceholder() {
     if (!userInput) return;
-    const hasChip = !!userInput.querySelector(".chip, .skill-chip");
+    const hasChip = !!userInput.querySelector(".chip, .skill-chip, .attach-chip");
     const hasText = getInputPlainText().length > 0;
     userInput.classList.toggle("show-placeholder", !hasChip && !hasText);
   }
@@ -1813,6 +1820,50 @@
     return range;
   }
 
+  const ATTACH_ICON_SVG = {
+    image: '<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="10" rx="1.2" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="7" r="1.2" fill="currentColor"/><path d="M2 11l3.5-3.5 2.5 2.5L14 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    pdf: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="5" y="12" font-size="4" fill="currentColor" font-weight="700">PDF</text></svg>',
+    word: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">DOC</text></svg>',
+    excel: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">XLS</text></svg>',
+    ppt: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/><text x="4.5" y="12" font-size="3.5" fill="currentColor" font-weight="700">PPT</text></svg>',
+    file: '<svg viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8H4V2z" stroke="currentColor" stroke-width="1.2"/><path d="M9 2v4h4" stroke="currentColor" stroke-width="1.2"/></svg>',
+  };
+
+  function getAttachmentKindByName(name, mime) {
+    const n = (name || "").toLowerCase();
+    const m = mime || "";
+    if (m.startsWith("image/") || /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(n)) return "image";
+    if (m === "application/pdf" || /\.pdf$/.test(n)) return "pdf";
+    if (/word|document/.test(m) || /\.(doc|docx)$/.test(n)) return "word";
+    if (/sheet|excel/.test(m) || /\.(xls|xlsx|csv|et)$/.test(n)) return "excel";
+    if (/presentation|powerpoint/.test(m) || /\.(ppt|pptx)$/.test(n)) return "ppt";
+    return "file";
+  }
+
+  function shortenChipName(name, max) {
+    if (!name || name.length <= max) return name || "未命名";
+    const dot = name.lastIndexOf(".");
+    if (dot <= 0) return name.slice(0, max - 1) + "…";
+    const ext = name.slice(dot);
+    const base = name.slice(0, dot);
+    const keep = Math.max(4, max - ext.length - 1);
+    return base.slice(0, keep) + "…" + ext;
+  }
+
+  /** 把芯片提升为 mixed-input 直接子节点，避免被包进块级 div 导致竖排 */
+  function promoteChipInline(chip) {
+    if (!chip || !userInput) return;
+    let p = chip.parentNode;
+    while (p && p !== userInput && p.parentNode !== userInput) p = p.parentNode;
+    if (!p || p === userInput || p.tagName !== "DIV") return;
+    const next = chip.nextSibling;
+    userInput.insertBefore(chip, p);
+    if (next && next.nodeType === 3) userInput.insertBefore(next, p);
+    if (!p.querySelector(".attach-chip, .chip, .skill-chip") && !(p.textContent || "").replace(/[\u200B\u00A0]/g, "").trim()) {
+      p.remove();
+    }
+  }
+
   /** 在光标处插入节点；插完后光标落在内容后。不先 focus，避免光标被打回开头。 */
   function insertInlineNode(node) {
     if (!userInput || !node) return;
@@ -1824,8 +1875,8 @@
     frag.appendChild(node);
     frag.appendChild(spacer);
     range.insertNode(frag);
+    promoteChipInline(node);
 
-    // 先设光标再 focus，避免抢焦点把插入点重置到开头
     placeCaretAfter(spacer);
     userInput.focus();
     placeCaretAfter(spacer);
@@ -1841,42 +1892,55 @@
 
   function buildContextChipEl(chip) {
     const el = document.createElement("span");
-    el.className = "chip " + chip.type;
     el.contentEditable = "false";
     el.dataset.id = chip.id;
-    let body = "";
-    if (chip.type === "screenshot") {
-      body =
-        '<div class="chip-thumb"></div>' +
-        '<div class="chip-meta"><span class="chip-label">' + chip.label + '</span>' +
-        '<span class="chip-sub">' + (chip.meta.size || "") + "</span></div>";
+
+    if (chip.type === "attachment" || chip.type === "screenshot") {
+      const kind = chip.meta && chip.meta.kind
+        ? chip.meta.kind
+        : getAttachmentKindByName(chip.label, (chip.meta && chip.meta.mime) || "");
+      el.className = "attach-chip attach-chip--" + kind + (chip.type === "screenshot" ? " chip screenshot" : "");
+      el.dataset.chipType = chip.type;
+      el.innerHTML =
+        '<span class="attach-icon">' + (ATTACH_ICON_SVG[kind] || ATTACH_ICON_SVG.file) + "</span>" +
+        '<span class="attach-name" title="' + chip.label + '">' + shortenChipName(chip.label, 22) + "</span>" +
+        '<button class="attach-remove chip-x" type="button" data-id="' + chip.id + '" aria-label="移除">×</button>';
     } else if (chip.type === "selection" || chip.type === "ref") {
+      el.className = "chip " + chip.type;
       const icon = chip.type === "selection"
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
-      body = icon + '<span class="chip-label">' + chip.label + "</span>";
+        ? '<span class="attach-icon" style="background:#eef8f2;color:#166534"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg></span>'
+        : '<span class="attach-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>';
+      el.innerHTML =
+        icon +
+        '<span class="chip-label attach-name" title="' + chip.label + '">' + shortenChipName(chip.label, 22) + "</span>" +
+        '<button class="chip-x" type="button" data-id="' + chip.id + '">×</button>';
     } else {
-      body =
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' +
-        '<span class="chip-label">' + chip.label + "</span>";
+      el.className = "attach-chip attach-chip--file";
+      el.innerHTML =
+        '<span class="attach-icon">' + ATTACH_ICON_SVG.file + "</span>" +
+        '<span class="attach-name" title="' + chip.label + '">' + shortenChipName(chip.label, 22) + "</span>" +
+        '<button class="attach-remove chip-x" type="button" data-id="' + chip.id + '">×</button>';
     }
-    el.innerHTML = body + '<button class="chip-x" type="button" data-id="' + chip.id + '">×</button>';
-    el.querySelector(".chip-x").addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      chips = chips.filter((c) => c.id !== chip.id);
-      el.remove();
-      syncInputPlaceholder();
-      updateSendState();
-      showToast("已移除上下文");
-    });
+
+    const rm = el.querySelector(".chip-x, .attach-remove");
+    if (rm) {
+      rm.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        chips = chips.filter((c) => c.id !== chip.id);
+        el.remove();
+        syncInputPlaceholder();
+        updateSendState();
+        showToast("已移除上下文");
+      });
+    }
     return el;
   }
 
   function renderChips() {
     // 仅同步删除：新增芯片由 pushContextChip / insertInlineNode 在光标处插入
     const keep = new Set(chips.map((c) => c.id));
-    userInput.querySelectorAll(".chip[data-id]").forEach((el) => {
+    userInput.querySelectorAll(".chip[data-id], .attach-chip[data-id]").forEach((el) => {
       if (!keep.has(el.dataset.id)) el.remove();
     });
     syncInputPlaceholder();
@@ -1893,8 +1957,8 @@
   function enableChipBarReorder() {
     if (!userInput || userInput._chipReorderBound) return;
     userInput._chipReorderBound = true;
-    const chipSelector = ".chip, .skill-chip";
-    const excludeSel = ".chip-x, .skill-chip-remove";
+    const chipSelector = ".attach-chip, .chip, .skill-chip";
+    const excludeSel = ".chip-x, .attach-remove, .skill-chip-remove";
     const threshold = 5;
     let dragEl = null;
     let started = false;
@@ -2108,6 +2172,7 @@
           sourceLabel: "本地文件/云文档",
           size: file.size,
           mime: file.type || "",
+          kind: getAttachmentKindByName(file.name, file.type || ""),
         },
         file: file,
       });
@@ -2584,7 +2649,7 @@
   });
 
   function hasSendableContent() {
-    return getInputPlainText().length > 0 || chips.length > 0 || !!userInput.querySelector(".skill-chip");
+    return getInputPlainText().length > 0 || chips.length > 0 || !!userInput.querySelector(".skill-chip, .attach-chip");
   }
   function updateSendState() {
     const ok = hasSendableContent();
@@ -2768,8 +2833,8 @@ html.agent-embed .sidebar.hidden {
     var chips = [];
     var skills = [];
     if (userInput) {
-      userInput.querySelectorAll(".chip").forEach(function (el) {
-        var label = (el.querySelector(".chip-label") || el).textContent || "";
+      userInput.querySelectorAll(".chip, .attach-chip").forEach(function (el) {
+        var label = (el.querySelector(".chip-label, .attach-name") || el).textContent || "";
         chips.push({ label: label.trim() });
       });
       userInput.querySelectorAll(".skill-chip").forEach(function (el) {
@@ -2778,7 +2843,7 @@ html.agent-embed .sidebar.hidden {
     }
     var clone = userInput ? userInput.cloneNode(true) : null;
     if (clone) {
-      clone.querySelectorAll(".chip, .skill-chip").forEach(function (n) { n.remove(); });
+      clone.querySelectorAll(".chip, .skill-chip, .attach-chip").forEach(function (n) { n.remove(); });
     }
     return {
       text: clone ? (clone.textContent || "").replace(/\u00A0/g, " ").replace(/\u200B/g, "").trim() : "",
