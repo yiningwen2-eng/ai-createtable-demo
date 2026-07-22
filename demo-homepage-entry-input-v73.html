@@ -225,15 +225,22 @@ body { font-family: "Microsoft YaHei", "微软雅黑", sans-serif; background: #
 }
 
 /* 表格网格 */
-.grid-table { border-collapse: collapse; width: max-content; min-width: 100%; }
+.grid-table {
+  border-collapse: collapse; width: max-content; min-width: 100%;
+  user-select: none; -webkit-user-select: none;
+}
 .grid-table .col-header {
   background: #f8f9fa; border: 1px solid #e0e0e0; text-align: center; font-size: 11px; color: #666;
   height: 22px; min-width: 80px; font-weight: normal; position: sticky; top: 0; z-index: 2;
+  user-select: none; -webkit-user-select: none;
 }
 .grid-table .col-header.first { min-width: 40px; width: 40px; }
 .grid-table .row-header {
   background: #f8f9fa; border: 1px solid #e0e0e0; text-align: center; font-size: 11px; color: #666;
   width: 40px; min-width: 40px; font-weight: normal;
+  user-select: none; -webkit-user-select: none;
+  /* 避免拖选时被浏览器当成「选中文本」刷蓝底 */
+  pointer-events: none;
 }
 .grid-table td {
   border: 1px solid #e0e0e0; height: 22px; min-width: 80px; font-size: 12px; padding: 0 4px; color: #333; position: relative;
@@ -6005,6 +6012,9 @@ function bindParentSelectionFloat() {
     if (e.button === 2) return;
     const td = e.target.closest('td[data-r][data-c]');
     if (!td || !td.closest('#gridTable')) return;
+    // 阻止浏览器原生拖选，否则同行「行号」会被一起刷蓝
+    e.preventDefault();
+    try { const s = window.getSelection && window.getSelection(); if (s) s.removeAllRanges(); } catch (err) {}
     parentSelecting = true;
     parentSelStart = { r: +td.dataset.r, c: colLetterToIndex(td.dataset.c) };
     parentSelection = normalizeParentSel(parentSelStart, parentSelStart);
