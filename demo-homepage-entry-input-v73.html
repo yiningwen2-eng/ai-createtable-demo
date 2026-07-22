@@ -1920,6 +1920,10 @@ function renderSheetTabs() {
 function refreshActiveSheetGrid() {
   const sheet = getActiveSheet();
   buildGrid(sheet ? sheet.tableData : null);
+  // 网格 DOM 重建后清空选区状态，避免旧节点失效
+  if (typeof clearParentSelectionUI === 'function') {
+    try { clearParentSelectionUI(); } catch (e) { /* ignore */ }
+  }
 }
 
 function switchSheet(sheetId) {
@@ -3298,11 +3302,14 @@ function buildGrid(tableData) {
   html += '</tr>';
 
   if (tableData) {
-    // Title row
+    // Title row（保留跨列展示；其余列补齐 data-r/data-c，保证可选区）
+    const titleSpan = Math.max(1, Math.min(tableData.headers.length || 1, COLS.length));
     html += '<tr>';
     html += `<td class="row-header">1</td>`;
-    html += `<td colspan="${tableData.headers.length}" style="font-size:14px;font-weight:600;color:#333;text-align:center;background:#f8f9fa;height:28px;">${tableData.title}</td>`;
-    for (let i = tableData.headers.length; i < COLS.length; i++) html += '<td></td>';
+    html += `<td data-r="1" data-c="${COLS[0]}" colspan="${titleSpan}" style="font-size:14px;font-weight:600;color:#333;text-align:center;background:#f8f9fa;height:28px;">${tableData.title}</td>`;
+    for (let i = titleSpan; i < COLS.length; i++) {
+      html += `<td data-r="1" data-c="${COLS[i]}"></td>`;
+    }
     html += '</tr>';
 
     // Header row
@@ -3317,27 +3324,32 @@ function buildGrid(tableData) {
         const align = leftCols.indexOf(h) >= 0 ? 'left' : 'center';
         hStyle = 'background:#eceff1;font-weight:600;text-align:' + align + ';border:1px solid #cfd8dc;';
       }
-      html += `<td class="generated-header" style="${hStyle}">${h} <span class="filter-icon">▾</span></td>`;
+      html += `<td class="generated-header" data-r="2" data-c="${COLS[i]}" style="${hStyle}">${h} <span class="filter-icon">▾</span></td>`;
     });
-    for (let i = tableData.headers.length; i < COLS.length; i++) html += '<td></td>';
+    for (let i = tableData.headers.length; i < COLS.length; i++) {
+      html += `<td data-r="2" data-c="${COLS[i]}"></td>`;
+    }
     html += '</tr>';
 
     // Data rows
     tableData.data.forEach((row, ri) => {
-      html += `<tr><td class="row-header">${ri + 3}</td>`;
+      const r = ri + 3;
+      html += `<tr><td class="row-header">${r}</td>`;
       row.forEach((cell, ci) => {
         const header = tableData.headers[ci];
         const style = getGeneratedCellStyle(header, cell, row, tableData);
-        html += `<td class="generated-data" style="${style}">${cell}</td>`;
+        html += `<td class="generated-data" data-r="${r}" data-c="${COLS[ci]}" style="${style}">${cell}</td>`;
       });
-      for (let i = row.length; i < COLS.length; i++) html += '<td></td>';
+      for (let i = row.length; i < COLS.length; i++) {
+        html += `<td data-r="${r}" data-c="${COLS[i]}"></td>`;
+      }
       html += '</tr>';
     });
 
     // Empty rows after data
     for (let r = tableData.data.length + 3; r <= ROWS; r++) {
       html += `<tr><td class="row-header">${r}</td>`;
-      COLS.forEach(() => { html += '<td></td>'; });
+      COLS.forEach((c) => { html += `<td data-r="${r}" data-c="${c}"></td>`; });
       html += '</tr>';
     }
   } else {
