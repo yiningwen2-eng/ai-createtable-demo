@@ -6195,8 +6195,11 @@ function openQuickBuildViaSidebar() {
   $('aiSidebar').classList.add('show');
   sidebarOpenedForGeneration = false;
   restoreSidebarHome();
+  postToAgentSidebar('agent-sidebar-set-sidebar-open', { open: true });
   postToAgentSidebar('agent-sidebar-set-input', { text: QUICK_BUILD_SIDEBAR_PROMPT });
   postToAgentSidebar('agent-sidebar-focus');
+  // 预填后仍同步当前选区，保证询问条可出现
+  if (parentSelection) notifyParentSelectionToSidebar(parentSelection);
   updateGuide('「快速建表」→ 侧边栏已打开（面板互斥关闭），可修改后发送');
 }
 

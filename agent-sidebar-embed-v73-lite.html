@@ -3542,12 +3542,13 @@
   userInput.addEventListener("blur", saveInputCaret);
   btnPlus.addEventListener("mousedown", saveInputCaret);
   btnSkill.addEventListener("mousedown", saveInputCaret);
-  userInput.addEventListener("input", () => {
+  userInput.addEventListener("input", (e) => {
     saveInputCaret();
     syncInputPlaceholder();
     updateSendState();
     detectTriggerFromInput();
-    // 开始打字 → 收起询问条，本会话不再出
+    // 仅真实键入收起询问条；程序预填（如「快速建表」）不收起
+    if (!e.isTrusted) return;
     if (convMode === "home" && badgeState === "unset" && !guideUsedInConv) {
       var plain = (getInputPlainText() || "").replace(/\u200B/g, "").trim();
       if (plain.length > 0) dismissGuideForConv();
